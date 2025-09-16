@@ -1,7 +1,0 @@
-include README.md
-include LICENSE
-include requirements.txt
-include pyproject.toml
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-recursive-exclude * .git*
