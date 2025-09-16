@@ -1,149 +1,165 @@
 # Protein Featurizer
 
-A comprehensive Python toolkit for extracting structural features from protein PDB files for machine learning applications.
-
-## Features
-
-- **PDB Standardization**: Clean and standardize PDB files (remove waters, DNA/RNA, reorder atoms)
-- **Feature Extraction**: Comprehensive residue-level and interaction features
-- **Geometric Analysis**: Distances, angles, dihedrals, curvature, and torsion
-- **SASA Calculation**: Solvent accessible surface area analysis
-- **Graph Representation**: Protein structure as graph with node and edge features
-- **Batch Processing**: Process multiple PDB files efficiently
-- **Modular Design**: Separate modules for different functionalities
-
-## Project Structure
-
-```
-protein-featurizer/
-├── pdb_standardizer.py   # PDB cleaning and standardization
-├── residue_featurizer.py # Feature extraction from proteins
-├── main.py               # Main pipeline orchestrator
-├── feature.py            # Legacy all-in-one script
-├── requirements.txt      # Package dependencies
-└── README.md            # This file
-```
+A Python package for extracting structural features from protein PDB files for machine learning applications.
 
 ## Installation
 
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Command Line Interface
-
-#### Single File Processing
+### Install from GitHub
 
 ```bash
-# Process a single PDB file with standardization
-python main.py protein.pdb -o features.pt
-
-# Process without standardization
-python main.py protein.pdb -o features.pt --no-standardize
-
-# Keep hydrogen atoms during standardization
-python main.py protein.pdb -o features.pt --keep-hydrogens
+pip install git+https://github.com/eightmm/protein-featurizer.git
 ```
 
-#### Batch Processing
+### Install for Development
 
 ```bash
-# Process all PDB files in a directory
-python main.py --batch input_dir/ output_dir/
-
-# Process with specific pattern
-python main.py --batch input_dir/ output_dir/ --pattern "**/*_protein.pdb"
-
-# Reprocess existing files
-python main.py --batch input_dir/ output_dir/ --no-skip
+git clone https://github.com/eightmm/protein-featurizer.git
+cd protein-featurizer
+pip install -e .
 ```
 
-#### Module-Specific Usage
-
-```bash
-# Standardize PDB only
-python pdb_standardizer.py input.pdb output_clean.pdb
-
-# Extract features only (requires clean PDB)
-python residue_featurizer.py clean.pdb -o features.pt
-```
-
-### Python API
-
-#### Complete Pipeline
+## Quick Start
 
 ```python
-from pdb_standardizer import PDBStandardizer
-from residue_featurizer import ResidueFeaturizer
+from protein_featurizer import Featurizer
+
+# Initialize featurizer
+featurizer = Featurizer()
+
+# Extract features from a PDB file
+features = featurizer.extract("protein.pdb")
+
+# Save features to file
+features = featurizer.extract("protein.pdb", save_to="features.pt")
+
+# Process multiple files
+results = featurizer.extract_batch(
+    ["protein1.pdb", "protein2.pdb"],
+    output_dir="features/"
+)
+```
+
+## Features
+
+- 🧬 **PDB Standardization**: Automatic cleaning and standardization of PDB files
+- 📊 **Comprehensive Features**: Geometric, chemical, and interaction features
+- 🚀 **Simple API**: Easy-to-use interface for both beginners and experts
+- 📦 **Batch Processing**: Efficiently process multiple proteins
+- 🔧 **Modular Design**: Use individual components as needed
+
+## Usage Examples
+
+### Basic Usage
+
+```python
+from protein_featurizer import Featurizer
+
+# Create featurizer with default settings
+featurizer = Featurizer()
+
+# Extract features
+features = featurizer.extract("protein.pdb")
+
+# Access node and edge features
+node_features = features['node']
+edge_features = features['edge']
+```
+
+### Advanced Usage
+
+```python
+from protein_featurizer import Featurizer
+
+# Custom configuration
+featurizer = Featurizer(
+    standardize=True,      # Clean PDB file first
+    keep_hydrogens=False   # Remove hydrogen atoms
+)
+
+# Process and save
+features = featurizer.extract(
+    "protein.pdb",
+    save_to="features.pt"
+)
+
+# Batch processing
+pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
+results = featurizer.extract_batch(
+    pdb_files,
+    output_dir="processed_features/",
+    skip_existing=True,
+    verbose=True
+)
+```
+
+### Using Individual Components
+
+```python
+from protein_featurizer import PDBStandardizer, ResidueFeaturizer
 
 # Step 1: Standardize PDB
 standardizer = PDBStandardizer(remove_hydrogens=True)
-clean_pdb = standardizer.standardize('input.pdb', 'clean.pdb')
+clean_pdb = standardizer.standardize("input.pdb", "clean.pdb")
 
 # Step 2: Extract features
 featurizer = ResidueFeaturizer(clean_pdb)
 node_features, edge_features = featurizer.get_features()
-
-# Save features
-import torch
-torch.save({'node': node_features, 'edge': edge_features}, 'features.pt')
 ```
 
-#### Direct Feature Extraction
+### Command Line Interface
 
-```python
-from residue_featurizer import ResidueFeaturizer
+```bash
+# Extract features
+protein-featurizer protein.pdb -o features.pt
 
-# Initialize with PDB file
-featurizer = ResidueFeaturizer('protein.pdb')
+# Batch processing
+protein-featurizer --batch input_dir/ output_dir/
 
-# Get specific features
-residues = featurizer.get_residues()
-sasa = featurizer.calculate_sasa()
-terminal_flags = featurizer.get_terminal_flags()
-
-# Get all features
-node_features, edge_features = featurizer.get_features()
+# Just standardize PDB
+pdb-standardize input.pdb output_clean.pdb
 ```
 
-## Feature Types
+## Extracted Features
 
 ### Node Features (Per Residue)
-
-- **Residue Identity**: One-hot encoding of amino acid type (21 classes)
-- **Terminal Flags**: N-terminal and C-terminal indicators
-- **Geometric Features**:
-  - Self-interaction distances within residue
-  - Backbone dihedral angles (φ, ψ, ω)
-  - Side-chain dihedral angles (χ1-χ5)
-  - Backbone curvature and torsion
-- **SASA Features**: Total, polar, apolar, main chain, side chain (absolute and relative)
-- **Local Coordinate Frames**: Residue-specific coordinate system
-- **Sequential Connections**: Forward/reverse residue vectors and distances
+- Residue type (one-hot encoding)
+- Terminal flags (N/C-terminal)
+- Geometric features (distances, angles, dihedrals)
+- SASA (Solvent Accessible Surface Area)
+- Local coordinate frames
+- Sequential connections
 
 ### Edge Features (Residue Pairs)
+- Interaction distances (CA-CA, SC-SC, CA-SC, SC-CA)
+- Relative position encoding
+- 3D interaction vectors
 
-- **Interaction Distances**: CA-CA, SC-SC, CA-SC, SC-CA distances
-- **Relative Position**: Sequential distance encoding (one-hot)
-- **Interaction Vectors**: 3D vectors between residue pairs
+## API Reference
+
+### `Featurizer` Class
+
+The main API for feature extraction.
+
+#### Methods
+
+- `extract(pdb_file, save_to=None)`: Extract features from a single PDB file
+- `extract_batch(pdb_files, output_dir=None, skip_existing=True, verbose=True)`: Process multiple files
+- `from_clean_pdb(pdb_file)`: Extract from pre-cleaned PDB (class method)
+- `standardize_only(input_pdb, output_pdb, keep_hydrogens=False)`: Only standardize PDB (static method)
 
 ### Output Format
-
-Features are saved as PyTorch tensors in a dictionary:
 
 ```python
 {
     'node': {
         'coord': Tensor[N, 2, 3],  # CA and SC coordinates
-        'node_scalar_features': Tuple of scalar feature tensors,
-        'node_vector_features': Tuple of vector feature tensors
+        'node_scalar_features': tuple,
+        'node_vector_features': tuple
     },
     'edge': {
-        'edges': Tuple[Tensor, Tensor],  # Source and destination indices
-        'edge_scalar_features': Tuple of scalar feature tensors,
-        'edge_vector_features': Tuple of vector feature tensors
+        'edges': (src_indices, dst_indices),
+        'edge_scalar_features': tuple,
+        'edge_vector_features': tuple
     },
     'metadata': {
         'input_file': str,
@@ -155,29 +171,29 @@ Features are saved as PyTorch tensors in a dictionary:
 
 ## Requirements
 
-- Python 3.7+
-- PyTorch >= 1.9.0
-- NumPy >= 1.19.0
-- Pandas >= 1.3.0
-- FreeSASA >= 2.1.0
+- Python ≥ 3.7
+- PyTorch ≥ 1.9.0
+- NumPy ≥ 1.19.0
+- Pandas ≥ 1.3.0
+- FreeSASA ≥ 2.1.0
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Citation
 
-If you use this tool in your research, please cite:
+If you use this package in your research, please cite:
 
 ```bibtex
 @software{protein_featurizer,
-  title = {Protein Featurizer: A toolkit for protein structure feature extraction},
+  title = {Protein Featurizer: A Python package for protein structure feature extraction},
   author = {Your Name},
   year = {2025},
   url = {https://github.com/eightmm/protein-featurizer}
 }
 ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
