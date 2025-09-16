@@ -192,7 +192,7 @@ If you use this package in your research, please cite:
 ```bibtex
 @software{protein_featurizer,
   title = {Protein Featurizer: A Python package for protein structure feature extraction},
-  author = {Your Name},
+  author = {Jaemin Sim},
   year = {2025},
   url = {https://github.com/eightmm/protein-featurizer}
 }
