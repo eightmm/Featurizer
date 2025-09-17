@@ -19,20 +19,7 @@ A comprehensive Python package for extracting features from both **molecules** a
 ## 📦 Installation
 
 ```bash
-# Install from GitHub
 pip install git+https://github.com/eightmm/Featurizer.git
-
-# For development
-git clone https://github.com/eightmm/Featurizer.git
-cd Featurizer
-pip install -e .
-```
-
-### Dependencies
-```bash
-pip install torch numpy pandas rdkit-pypi  # Core
-pip install freesasa biopython            # For proteins
-pip install dgl                           # For GNNs (optional)
 ```
 
 ## 🚀 Quick Start
@@ -40,35 +27,31 @@ pip install dgl                           # For GNNs (optional)
 ### Molecule Features
 ```python
 from featurizer import MoleculeFeaturizer
+from rdkit import Chem
 
-# Create featurizer
 featurizer = MoleculeFeaturizer()
 
-# Extract all features
-features = featurizer.get_feature("CCO")  # ethanol
-# Returns dict with 'descriptor' (40D), 'morgan' (2048D), 'maccs' (167D), etc.
+# From SDF file
+suppl = Chem.SDMolSupplier('molecules.sdf')
+for mol in suppl:
+    features = featurizer.get_feature(mol)
+    node, edge = featurizer.get_graph(mol)
 
-# Get graph representation for GNNs
-node, edge = featurizer.get_graph("c1ccccc1")  # benzene
-# node['coords']: 3D coordinates, node['node_feats']: atom features
-# edge['edges']: connectivity, edge['edge_feats']: bond features
+# From SMILES
+smiles = "CC(=O)Oc1ccccc1C(=O)O"
+features = featurizer.get_feature(smiles)
+node, edge = featurizer.get_graph(smiles)
 ```
 
 ### Protein Features
 ```python
 from featurizer import ProteinFeaturizer
 
-# Create featurizer
 featurizer = ProteinFeaturizer("protein.pdb")
 
-# Extract all features at once
 features = featurizer.get_all_features()
-# node_features: per-residue features
-# edge_features: residue-residue interactions
-
-# Or extract specific features
-sasa = featurizer.get_sasa_features()       # Solvent accessibility
-contacts = featurizer.get_contact_map(8.0)  # Contact map at 8Å cutoff
+sasa = featurizer.get_sasa_features()
+contacts = featurizer.get_contact_map(8.0)
 ```
 
 ## 📊 Feature Overview
@@ -81,17 +64,15 @@ contacts = featurizer.get_contact_map(8.0)  # Contact map at 8Å cutoff
 ### Proteins
 - **Node Features**: Residue type, geometry, SASA, secondary structure
 - **Edge Features**: Distances, orientations, contacts
-- **Sequence Features**: AAC, DPC, CTD descriptors → [Details](docs/feature_types.md#protein-features)
+- **Graph Representations**: Residue-residue interaction networks → [Details](docs/feature_types.md#protein-features)
 
 ## 🔧 Advanced Examples
 
 ### Batch Processing
 ```python
-# Process multiple molecules efficiently
 smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
 features = [featurizer.get_feature(smi) for smi in smiles_list]
 
-# Stack for neural network input
 import torch
 descriptors = torch.stack([f['descriptor'] for f in features])
 ```
@@ -100,10 +81,8 @@ descriptors = torch.stack([f['descriptor'] for f in features])
 ```python
 import dgl
 
-# Get molecular graph
 node, edge = featurizer.get_graph(mol)
 
-# Create DGL graph
 g = dgl.graph((edge['edges'][0], edge['edges'][1]))
 g.ndata['feat'] = node['node_feats']
 g.edata['feat'] = edge['edge_feats']
@@ -114,14 +93,12 @@ g.edata['feat'] = edge['edge_feats']
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-# Generate 3D coordinates
 mol = Chem.MolFromSmiles("CCO")
 AllChem.EmbedMolecule(mol)
 AllChem.UFFOptimizeMolecule(mol)
 
-# Extract with 3D coords preserved
 node, edge = featurizer.get_graph(mol)
-coords_3d = node['coords']  # [n_atoms, 3]
+coords_3d = node['coords']
 ```
 
 ## 📖 Documentation
@@ -129,14 +106,6 @@ coords_3d = node['coords']  # [n_atoms, 3]
 - [Molecular Descriptors Reference](docs/molecular_descriptors.md)
 - [Feature Types Guide](docs/feature_types.md)
 - [API Examples](examples/)
-
-## 📋 Requirements
-
-- Python ≥ 3.7
-- PyTorch ≥ 2.0.0
-- RDKit ≥ 2023.03
-- NumPy ≥ 1.20.0
-- See [requirements.txt](requirements.txt) for full list
 
 ## 🤝 Contributing
 
