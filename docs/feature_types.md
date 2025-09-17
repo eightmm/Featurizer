@@ -29,6 +29,7 @@ node, edge = featurizer.get_graph("CCO")  # Graph representation
 ## 🧬 Protein Features Summary
 
 ### Available Features
+- **Atom-Level Features**: 175 token types with atomic SASA
 - **Sequence Features**: Residue types and one-hot encoding
 - **Geometric Features**: Dihedrals, curvature, torsion, distances
 - **SASA Features**: 10-component solvent accessibility analysis
@@ -41,6 +42,7 @@ from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
 features = featurizer.get_all_features()  # All features
+atom_features = featurizer.get_atom_features_with_sasa()  # Atom-level
 contacts = featurizer.get_contact_map(cutoff=8.0)  # Contact map
 ```
 
