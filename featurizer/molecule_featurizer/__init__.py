@@ -9,19 +9,12 @@ from .molecule_feature import (
     create_molecule_features
 )
 
-from .molecule_graph import (
-    MoleculeGraphBuilder,
-    create_molecule_graph
-)
-
 __version__ = "0.2.0"
 __author__ = "Jaemin Sim"
 
 __all__ = [
     "MoleculeFeatureExtractor",
     "create_molecule_features",
-    "MoleculeGraphBuilder",
-    "create_molecule_graph",
     "MoleculeFeaturizer",  # Main API class
 ]
 
@@ -58,8 +51,7 @@ class MoleculeFeaturizer:
         """
         self.add_hs = add_hs
         self.compute_3d = compute_3d
-        self._extractor = MoleculeFeatureExtractor()
-        self._graph_builder = None
+        self._extractor = MoleculeFeatureExtractor(use_3d=compute_3d)
 
     def extract(self, mol_or_smiles, feature_types=None, save_to=None):
         """
@@ -118,11 +110,12 @@ class MoleculeFeaturizer:
                 }
 
         if "graph" in feature_types:
-            if self._graph_builder is None:
-                self._graph_builder = MoleculeGraphBuilder()
-
-            smiles = Chem.MolToSmiles(mol) if not isinstance(mol_or_smiles, str) else mol_or_smiles
-            features["graph"] = self._graph_builder.smiles_to_graph(smiles)
+            # Get node/edge format features
+            node, edge = self._extractor.get_features(mol)
+            features["graph"] = {
+                'node': node,
+                'edge': edge
+            }
 
         # Save if requested
         if save_to:

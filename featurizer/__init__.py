@@ -9,9 +9,7 @@ for machine learning applications.
 from .molecule_featurizer import (
     MoleculeFeaturizer,
     MoleculeFeatureExtractor,
-    create_molecule_features,
-    MoleculeGraphBuilder,
-    create_molecule_graph
+    create_molecule_features
 )
 
 # Import protein featurizer components
@@ -33,8 +31,6 @@ __all__ = [
     "MoleculeFeaturizer",
     "MoleculeFeatureExtractor",
     "create_molecule_features",
-    "MoleculeGraphBuilder",
-    "create_molecule_graph",
     # Protein features
     "ProteinFeaturizer",
     "PDBStandardizer",
