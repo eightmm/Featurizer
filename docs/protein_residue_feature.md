@@ -15,13 +15,17 @@ All residue-level methods have clear aliases for better clarity:
 
 ### 1. Standard Features (`get_features()` / `get_residue_features()`)
 
-Returns node and edge features in standard format for graph neural networks.
+Returns node and edge features in standard format for graph neural networks with customizable distance cutoff.
 
 ```python
 from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
-node, edge = featurizer.get_features()
+
+# Get residue graph with customizable distance cutoff
+node, edge = featurizer.get_features(distance_cutoff=8.0)  # Default: 8.0 Å
+# Or use clearer alias
+node, edge = featurizer.get_residue_features(distance_cutoff=8.0)
 
 # Node features
 coords = node['coord']                        # [n_residues, 2, 3] CA and SC coordinates

@@ -28,27 +28,56 @@ The atom featurizer uses a sophisticated tokenization system that encodes each a
 
 ### Method Naming Convention
 All atom-level methods have clear naming to distinguish from residue-level:
-- `get_atom_features()` → Aliases: `get_atom_tokens()`, `get_atom_level_features()`
+- `get_atom_features(distance_cutoff)` → Returns (node, edge) graph format
+- `get_atom_graph(distance_cutoff)` → Alias for get_atom_features()
+- `get_atom_tokens_and_coords()` → Returns (token, coord) tuple
 - `get_atom_features_with_sasa()` → Aliases: `get_atom_sasa()`, `get_atom_level_sasa()`
 - `get_atom_coordinates()` → Get only 3D coordinates
 - `get_atom_tokens_only()` → Get only token IDs
 
-### 1. Basic Atom Features (`get_atom_features()` / `get_atom_tokens()`)
+### 1. Atom Graph Features (`get_atom_features()` / `get_atom_graph()`)
 
-Extract atom-level tokenized features and coordinates.
+Get atom-level graph representation with node and edge features, similar to residue-level format.
 
 ```python
 from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
-token, coord = featurizer.get_atom_features()  # or get_atom_tokens()
+
+# Get atom graph with customizable distance cutoff
+node, edge = featurizer.get_atom_features(distance_cutoff=4.0)  # Default: 4.0 Å
+# Or use explicit alias
+node, edge = featurizer.get_atom_graph(distance_cutoff=4.0)
+
+# Node dictionary contains:
+# - 'coord': 3D coordinates [n_atoms, 3]
+# - 'node_features': Atom tokens [n_atoms]
+# - 'atom_tokens': Same as node_features
+# - 'sasa': Solvent accessible surface area per atom
+# - 'residue_token': Residue type for each atom
+# - 'atom_element': Element type for each atom
+
+# Edge dictionary contains:
+# - 'edges': (src, dst) tuple of edge indices
+# - 'edge_distances': Distances between connected atoms
+# - 'distance_cutoff': The cutoff used
+```
+
+### 2. Basic Token and Coordinates (`get_atom_tokens_and_coords()`)
+
+Get just tokens and coordinates without graph structure.
+
+```python
+token, coord = featurizer.get_atom_tokens_and_coords()
+# Or use alias
+token, coord = featurizer.get_atom_tokens()
 
 # Returns:
 # token: torch.Tensor [n_atoms] - Atom type tokens (0-174)
 # coord: torch.Tensor [n_atoms, 3] - 3D coordinates
 ```
 
-### 2. Atom Features with SASA (`get_atom_features_with_sasa()`)
+### 3. Atom Features with SASA (`get_atom_features_with_sasa()`)
 
 Comprehensive atom features including solvent accessible surface area.
 
@@ -71,7 +100,7 @@ features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 }
 ```
 
-### 3. Standalone Function Usage
+### 4. Standalone Function Usage
 
 Can also be used without class instantiation:
 

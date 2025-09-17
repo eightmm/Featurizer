@@ -274,18 +274,46 @@ class ProteinFeaturizer:
 
         return self._cache['terminal_flags']
 
-    def get_features(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def get_features(self, distance_cutoff: float = 8.0) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Get node and edge features in standard format.
+
+        Args:
+            distance_cutoff: Distance cutoff for residue-residue edges (default: 8.0 Å)
 
         Returns:
             Tuple of (node, edge) dictionaries with:
             - node: {'coord', 'node_scalar_features', 'node_vector_features'}
             - edge: {'edges', 'edge_scalar_features', 'edge_vector_features'}
         """
-        if 'features' not in self._cache:
-            self._cache['features'] = self._featurizer.get_features()
-        return self._cache['features']
+        cache_key = f'features_{distance_cutoff}'
+        if cache_key not in self._cache:
+            # Get edges with the specified cutoff
+            edges, edge_scalar_features, edge_vector_features = \
+                self._featurizer._extract_interaction_features(
+                    self.coords, distance_cutoff=distance_cutoff
+                )
+
+            # Get node features
+            node_scalar_features, node_vector_features = \
+                self._featurizer._extract_residue_features(
+                    self.coords, self.residue_types
+                )
+
+            node = {
+                'coord': self.coord,
+                'node_scalar_features': node_scalar_features,
+                'node_vector_features': node_vector_features
+            }
+
+            edge = {
+                'edges': edges,
+                'edge_scalar_features': edge_scalar_features,
+                'edge_vector_features': edge_vector_features
+            }
+
+            self._cache[cache_key] = (node, edge)
+        return self._cache[cache_key]
 
     def get_all_features(self, save_to: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -321,28 +349,85 @@ class ProteinFeaturizer:
 
     # ============== ATOM-LEVEL FEATURES ==============
 
-    def get_atom_features(self) -> Tuple[torch.Tensor, torch.Tensor]:
+    def get_atom_graph(self, distance_cutoff: float = 4.0) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
-        Get atom-level tokenized features.
+        Get atom-level graph representation with node and edge features.
+
+        Args:
+            distance_cutoff: Distance cutoff for atom-atom edges (default: 4.0 Å)
+
+        Returns:
+            Tuple of (node, edge) dictionaries:
+                - node: {'coord', 'node_features', 'atom_tokens', 'sasa'}
+                - edge: {'edges', 'edge_distances'}
+        """
+        cache_key = f'atom_graph_{distance_cutoff}'
+
+        if cache_key not in self._cache:
+            from .atom_featurizer import AtomFeaturizer
+            import numpy as np
+            from scipy.spatial import distance_matrix
+
+            atom_featurizer = AtomFeaturizer()
+            pdb_to_use = self.tmp_pdb if self.tmp_pdb else self.input_file
+
+            # Get atom features with SASA
+            atom_features = atom_featurizer.get_all_atom_features(pdb_to_use)
+
+            # Build distance matrix
+            coords = atom_features['coord'].numpy()
+            dist_matrix = distance_matrix(coords, coords)
+
+            # Create edges based on distance cutoff
+            edges_array = np.where((dist_matrix < distance_cutoff) & (dist_matrix > 0))
+            edges = (torch.tensor(edges_array[0]), torch.tensor(edges_array[1]))
+            edge_distances = torch.tensor(dist_matrix[edges_array])
+
+            # Package as node and edge dictionaries
+            node = {
+                'coord': atom_features['coord'],
+                'node_features': atom_features['token'],  # Token as main feature
+                'atom_tokens': atom_features['token'],
+                'sasa': atom_features['sasa'],
+                'residue_token': atom_features['residue_token'],
+                'atom_element': atom_features['atom_element']
+            }
+
+            edge = {
+                'edges': edges,
+                'edge_distances': edge_distances,
+                'distance_cutoff': distance_cutoff
+            }
+
+            self._cache[cache_key] = (node, edge)
+
+        return self._cache[cache_key]
+
+    # Alias for consistency
+    get_atom_features = get_atom_graph
+    get_atom_level_graph = get_atom_graph
+
+    def get_atom_tokens_and_coords(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Get atom-level tokenized features and coordinates.
 
         Returns:
             Tuple of (token, coord):
                 - token: Atom type tokens (175 types)
                 - coord: 3D coordinates
         """
-        if 'atom_features' not in self._cache:
+        if 'atom_tokens_coords' not in self._cache:
             from .atom_featurizer import AtomFeaturizer
             atom_featurizer = AtomFeaturizer()
 
             # Use the standardized PDB if available
             pdb_to_use = self.tmp_pdb if self.tmp_pdb else self.input_file
             token, coord = atom_featurizer.get_protein_atom_features(pdb_to_use)
-            self._cache['atom_features'] = (token, coord)
-        return self._cache['atom_features']
+            self._cache['atom_tokens_coords'] = (token, coord)
+        return self._cache['atom_tokens_coords']
 
     # Aliases for clarity
-    get_atom_tokens = get_atom_features
-    get_atom_level_features = get_atom_features
+    get_atom_tokens = get_atom_tokens_and_coords
 
     def get_atom_features_with_sasa(self) -> Dict[str, Any]:
         """
@@ -373,7 +458,7 @@ class ProteinFeaturizer:
         Returns:
             torch.Tensor: [n_atoms, 3] coordinates
         """
-        token, coord = self.get_atom_features()
+        token, coord = self.get_atom_tokens_and_coords()
         return coord
 
     def get_atom_tokens_only(self) -> torch.Tensor:
@@ -383,7 +468,7 @@ class ProteinFeaturizer:
         Returns:
             torch.Tensor: [n_atoms] token IDs (0-174)
         """
-        token, coord = self.get_atom_features()
+        token, coord = self.get_atom_tokens_and_coords()
         return token
 
     # ============== RESIDUE-LEVEL FEATURES ==============
