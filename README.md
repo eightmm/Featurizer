@@ -27,6 +27,16 @@ for mol in suppl:
 featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")
 features = featurizer.get_feature()  # All descriptors and fingerprints
 node, edge = featurizer.get_graph()  # Graph representation
+
+# With custom SMARTS patterns
+custom_patterns = {
+    'aromatic_nitrogen': 'n',
+    'carboxyl': 'C(=O)O',
+    'hydroxyl': '[OH]'
+}
+featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
+node, edge = featurizer.get_graph()
+# node['node_feats'] now has 122 + 3 dimensions (base features + custom patterns)
 ```
 
 ### Protein Features
