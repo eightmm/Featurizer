@@ -57,22 +57,45 @@
 
 ## Protein Features
 
-### Sequence-based Features
-- **AAC**: Amino Acid Composition (20 features)
-- **DPC**: Dipeptide Composition (400 features)
-- **CTD**: Composition, Transition, Distribution (147 features)
-- **QSO**: Quasi-Sequence-Order (100 features)
-- **PAAC**: Pseudo Amino Acid Composition (50 features)
+### Sequence Features (`get_sequence_features()`)
+- **Residue Types**: Integer encoding for 20 amino acids + UNK
+- **One-hot Encoding**: 21-dimensional one-hot vectors per residue
+- **Number of Residues**: Total residue count
 
-### Structure-based Features
-- **Secondary Structure**: Alpha helix, beta sheet, coil content
-- **Solvent Accessibility**: Buried/exposed residue ratios
-- **Contact Map**: Residue-residue contact patterns
+### Geometric Features (`get_geometric_features()`)
+- **Dihedral Angles**: Phi, psi, omega, and chi angles
+- **Has Chi Angles**: Boolean flags for side chain torsions
+- **Backbone Curvature**: Local backbone curvature measurements
+- **Backbone Torsion**: Local backbone torsion angles
+- **Self Distances**: Intra-residue atomic distances
+- **Self Vectors**: Intra-residue directional vectors
+- **Coordinates**: 3D coordinates for backbone and sidechain atoms
 
-### Functional Features
-- **PSSM**: Position-Specific Scoring Matrix
-- **Hydrophobicity**: Hydropathy profiles
-- **Charge Distribution**: Positive/negative charge patterns
+### SASA Features (`get_sasa_features()`)
+- **Solvent Accessible Surface Area**: 10 components per residue
+  - Total SASA
+  - Polar/apolar SASA
+  - Backbone/sidechain SASA
+  - Relative SASA values
+
+### Contact Features (`get_contact_map()`)
+- **Contact Matrix**: Binary contact map at specified cutoff
+- **Distance Matrix**: CA-CA distances between residues
+- **Edge Indices**: Residue pairs within distance cutoff
+
+### Node Features (`get_node_features()`)
+Combines all per-residue features:
+- Residue type and one-hot encoding
+- Terminal flags (N-terminal, C-terminal)
+- Geometric features (dihedrals, curvature, torsion)
+- SASA values
+- Local coordinate frames
+
+### Edge Features (`get_edge_features()`)
+- **Spatial Distances**: CA-CA, SC-SC, CA-SC, SC-CA distances
+- **Relative Position Encoding**: Sequence separation and spatial arrangement
+- **Orientation Vectors**: 3D unit vectors between residues
+- **Contact Indicators**: Binary contact flags
 
 ## Usage Examples
 
@@ -91,12 +114,13 @@ morgan_fp = mol_features['morgan']       # Shape: [2048]
 maccs_keys = mol_features['maccs']       # Shape: [167]
 
 # Protein features
-prot_featurizer = ProteinFeaturizer()
-prot_features = prot_featurizer.get_feature("MKFLILLFNILCLFPVLAAD")
+prot_featurizer = ProteinFeaturizer("protein.pdb")
 
-# Access sequence features
-aac = prot_features['aac']               # Shape: [20]
-dpc = prot_features['dpc']               # Shape: [400]
+# Get specific feature types
+sequence = prot_featurizer.get_sequence_features()
+geometry = prot_featurizer.get_geometric_features()
+sasa = prot_featurizer.get_sasa_features()
+contacts = prot_featurizer.get_contact_map(cutoff=8.0)
 ```
 
 ### Graph Features for GNN
