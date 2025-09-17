@@ -91,7 +91,8 @@ class MoleculeFeaturizer:
             - morgan, maccs, rdkit, etc.: 9 fingerprint types
         """
         if 'features' not in self._cache:
-            self._cache['features'] = self._core.get_feature(self._mol)
+            # Pass the molecule without additional hydrogen processing since it's already prepared
+            self._cache['features'] = self._core.get_feature(self._mol, add_hs=False)
         return self._cache['features']
 
     def get_descriptors(self) -> torch.Tensor:
@@ -174,7 +175,8 @@ class MoleculeFeaturizer:
 
         if cache_key not in self._cache:
             # Get basic graph structure
-            node, edge = self._core.get_graph(self._mol)
+            # Pass the molecule without additional hydrogen processing since it's already prepared
+            node, edge = self._core.get_graph(self._mol, add_hs=False)
 
             # Add custom SMARTS features if requested
             if include_custom_smarts and self.custom_smarts:
