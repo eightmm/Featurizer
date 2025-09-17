@@ -1,5 +1,5 @@
 """
-Protein Featurizer Package
+Protein Featurizer Module
 
 A comprehensive toolkit for extracting structural features from protein PDB files.
 """
@@ -8,9 +8,8 @@ from .pdb_standardizer import PDBStandardizer, standardize_pdb
 from .residue_featurizer import ResidueFeaturizer
 from .main import process_pdb, batch_process
 
-__version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__version__ = "0.2.0"
+__author__ = "Jaemin Sim"
 
 __all__ = [
     "PDBStandardizer",

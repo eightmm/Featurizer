@@ -1,27 +1,57 @@
-# Protein Featurizer
+# Featurizer
 
-A Python package for extracting structural features from protein PDB files for machine learning applications.
+A comprehensive Python package for extracting features from molecular and protein structures for machine learning applications.
+
+## Features
+
+- 🧪 **Molecular Features**: Extract physicochemical, structural, and fingerprint features from molecules
+- 🧬 **Protein Features**: Extract geometric, chemical, and interaction features from PDB files
+- 📊 **Universal Descriptors**: Focus on generally applicable molecular properties
+- 🚀 **Flexible API**: Support for both SMILES strings and RDKit mol objects
+- 📦 **Modular Design**: Use individual components as needed
 
 ## Installation
 
 ### Install from GitHub
 
 ```bash
-pip install git+https://github.com/eightmm/protein-featurizer.git
+pip install git+https://github.com/eightmm/featurizer.git
 ```
 
 ### Install for Development
 
 ```bash
-git clone https://github.com/eightmm/protein-featurizer.git
-cd protein-featurizer
+git clone https://github.com/eightmm/featurizer.git
+cd featurizer
 pip install -e .
 ```
 
 ## Quick Start
 
+### Molecular Features
+
 ```python
-from protein_featurizer import Featurizer
+from featurizer.molecule_featurizer import create_molecular_features
+from rdkit import Chem
+
+# From SMILES string
+smiles = "CC(=O)OC1=CC=CC=C1C(=O)O"  # Aspirin
+features = create_molecular_features(smiles)
+
+# From RDKit mol object
+mol = Chem.MolFromSmiles(smiles)
+features = create_molecular_features(mol)
+
+# Access different feature types
+descriptors = features['descriptor']  # Physicochemical descriptors
+morgan_fp = features['morgan']  # Morgan fingerprint
+maccs_fp = features['maccs']  # MACCS keys
+```
+
+### Protein Features
+
+```python
+from featurizer.protein_featurizer import Featurizer
 
 # Initialize featurizer
 featurizer = Featurizer()
@@ -29,97 +59,46 @@ featurizer = Featurizer()
 # Extract features from a PDB file
 features = featurizer.extract("protein.pdb")
 
-# Save features to file
-features = featurizer.extract("protein.pdb", save_to="features.pt")
-
-# Process multiple files
-results = featurizer.extract_batch(
-    ["protein1.pdb", "protein2.pdb"],
-    output_dir="features/"
-)
-```
-
-## Features
-
-- 🧬 **PDB Standardization**: Automatic cleaning and standardization of PDB files
-- 📊 **Comprehensive Features**: Geometric, chemical, and interaction features
-- 🚀 **Simple API**: Easy-to-use interface for both beginners and experts
-- 📦 **Batch Processing**: Efficiently process multiple proteins
-- 🔧 **Modular Design**: Use individual components as needed
-
-## Usage Examples
-
-### Basic Usage
-
-```python
-from protein_featurizer import Featurizer
-
-# Create featurizer with default settings
-featurizer = Featurizer()
-
-# Extract features
-features = featurizer.extract("protein.pdb")
-
 # Access node and edge features
 node_features = features['node']
 edge_features = features['edge']
+
+# Save features to file
+features = featurizer.extract("protein.pdb", save_to="features.pt")
 ```
 
-### Advanced Usage
+## Molecular Features Extracted
 
-```python
-from protein_featurizer import Featurizer
+### Physicochemical Descriptors
+- Molecular weight, LogP, TPSA
+- Number of rotatable bonds, flexibility
+- Hydrogen bond donors/acceptors
+- Number of atoms, bonds, rings
+- Heteroatom ratio
 
-# Custom configuration
-featurizer = Featurizer(
-    standardize=True,      # Clean PDB file first
-    keep_hydrogens=False   # Remove hydrogen atoms
-)
+### Drug-likeness Features
+- Lipinski's Rule of Five violations
+- QED (Quantitative Estimate of Drug-likeness)
+- Fraction of sp3 carbons
+- Number of heavy atoms
 
-# Process and save
-features = featurizer.extract(
-    "protein.pdb",
-    save_to="features.pt"
-)
+### Atom Composition
+- Nitrogen, oxygen, sulfur, halogen, phosphorus ratios
+- Universal atom type distributions
 
-# Batch processing
-pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
-results = featurizer.extract_batch(
-    pdb_files,
-    output_dir="processed_features/",
-    skip_existing=True,
-    verbose=True
-)
-```
+### Structural Features
+- Ring systems count and sizes
+- Average and maximum ring sizes
 
-### Using Individual Components
+### Molecular Fingerprints
+- MACCS keys (166 bits)
+- Morgan fingerprints (2048 bits)
+- RDKit fingerprints (2048 bits)
+- Atom pair fingerprints
+- Topological torsion fingerprints
+- 2D pharmacophore fingerprints
 
-```python
-from protein_featurizer import PDBStandardizer, ResidueFeaturizer
-
-# Step 1: Standardize PDB
-standardizer = PDBStandardizer(remove_hydrogens=True)
-clean_pdb = standardizer.standardize("input.pdb", "clean.pdb")
-
-# Step 2: Extract features
-featurizer = ResidueFeaturizer(clean_pdb)
-node_features, edge_features = featurizer.get_features()
-```
-
-### Command Line Interface
-
-```bash
-# Extract features
-protein-featurizer protein.pdb -o features.pt
-
-# Batch processing
-protein-featurizer --batch input_dir/ output_dir/
-
-# Just standardize PDB
-pdb-standardize input.pdb output_clean.pdb
-```
-
-## Extracted Features
+## Protein Features Extracted
 
 ### Node Features (Per Residue)
 - Residue type (one-hot encoding)
@@ -136,46 +115,82 @@ pdb-standardize input.pdb output_clean.pdb
 
 ## API Reference
 
-### `Featurizer` Class
+### Molecular Featurizer
 
-The main API for feature extraction.
+```python
+create_molecular_features(mol_or_smiles, add_hs=True)
+```
 
-#### Methods
+**Parameters:**
+- `mol_or_smiles`: RDKit mol object or SMILES string
+- `add_hs`: Whether to add hydrogens (default: True)
 
+**Returns:**
+Dictionary containing:
+- `descriptor`: Tensor of physicochemical descriptors
+- `maccs`: MACCS fingerprint
+- `morgan`: Morgan fingerprint
+- `morgan_count`: Morgan count fingerprint
+- `feature_morgan`: Feature Morgan fingerprint
+- `rdkit`: RDKit fingerprint
+- `atom_pair`: Atom pair fingerprint
+- `topological_torsion`: Topological torsion fingerprint
+- `pharmacophore2d`: 2D pharmacophore fingerprint
+
+### Protein Featurizer
+
+```python
+Featurizer(standardize=True, keep_hydrogens=False)
+```
+
+**Methods:**
 - `extract(pdb_file, save_to=None)`: Extract features from a single PDB file
 - `extract_batch(pdb_files, output_dir=None, skip_existing=True, verbose=True)`: Process multiple files
 - `from_clean_pdb(pdb_file)`: Extract from pre-cleaned PDB (class method)
 - `standardize_only(input_pdb, output_pdb, keep_hydrogens=False)`: Only standardize PDB (static method)
 
-### Output Format
+## Advanced Usage
+
+### Custom Molecular Feature Extraction
 
 ```python
-{
-    'node': {
-        'coord': Tensor[N, 2, 3],  # CA and SC coordinates
-        'node_scalar_features': tuple,
-        'node_vector_features': tuple
-    },
-    'edge': {
-        'edges': (src_indices, dst_indices),
-        'edge_scalar_features': tuple,
-        'edge_vector_features': tuple
-    },
-    'metadata': {
-        'input_file': str,
-        'standardized': bool,
-        'hydrogens_removed': bool
-    }
-}
+from featurizer.molecule_featurizer import MolecularFeatureExtractor
+from rdkit import Chem
+
+mol = Chem.MolFromSmiles("CCO")
+extractor = MolecularFeatureExtractor()
+
+# Get specific feature types
+phys_features = extractor.get_physicochemical_features(mol)
+drug_features = extractor.get_druglike_features(mol)
+struct_features = extractor.get_structural_features(mol)
+fingerprints = extractor.get_fingerprints(mol)
+```
+
+### Batch Processing
+
+```python
+from featurizer.protein_featurizer import Featurizer
+
+# Process multiple proteins
+featurizer = Featurizer()
+pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
+results = featurizer.extract_batch(
+    pdb_files,
+    output_dir="processed_features/",
+    skip_existing=True,
+    verbose=True
+)
 ```
 
 ## Requirements
 
 - Python ≥ 3.7
+- RDKit ≥ 2020.09
 - PyTorch ≥ 1.9.0
 - NumPy ≥ 1.19.0
 - Pandas ≥ 1.3.0
-- FreeSASA ≥ 2.1.0
+- FreeSASA ≥ 2.1.0 (for protein features)
 
 ## License
 
@@ -190,10 +205,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 If you use this package in your research, please cite:
 
 ```bibtex
-@software{protein_featurizer,
-  title = {Protein Featurizer: A Python package for protein structure feature extraction},
+@software{featurizer,
+  title = {Featurizer: A Python package for molecular and protein structure feature extraction},
   author = {Jaemin Sim},
   year = {2025},
-  url = {https://github.com/eightmm/protein-featurizer}
+  url = {https://github.com/eightmm/featurizer}
 }
 ```

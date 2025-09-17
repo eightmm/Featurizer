@@ -1,10 +1,26 @@
 #!/usr/bin/env python3
 """
-Advanced usage examples demonstrating individual components and custom workflows.
+Advanced usage examples of the Featurizer package.
 """
 
+import os
+import sys
+from pathlib import Path
 import torch
-from protein_featurizer import PDBStandardizer, ResidueFeaturizer, Featurizer
+from rdkit import Chem
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from featurizer import (
+    MolecularFeatureExtractor,
+    MolecularGraph,
+    create_molecular_graph,
+    smiles_to_graph,
+    ProteinFeaturizer,
+    PDBStandardizer,
+    ResidueFeaturizer
+)
 
 
 def component_usage_example():
