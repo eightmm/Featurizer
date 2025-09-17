@@ -1,345 +1,169 @@
 # Featurizer
 
-A comprehensive Python package for extracting features from both **molecules** (small molecules/drugs) and **proteins** for machine learning applications, with special support for graph neural networks.
+A comprehensive Python package for extracting features from both **molecules** and **proteins** for machine learning applications, with special support for graph neural networks.
 
 ## 🌟 Key Features
 
 ### 🧪 Molecule Featurizer
-- **Dual Input Support**: RDKit mol objects (primary) or SMILES strings
-- **3D Coordinate Preservation**: Maintains and generates 3D structures
-- **Graph Representations**: Node and edge features for GNN models
-- **Comprehensive Fingerprints**: Multiple molecular fingerprint types
-- **Molecular Descriptors**: Physicochemical and drug-likeness properties
+- **40 molecular descriptors** covering physicochemical, topological, and structural properties
+- **9 types of molecular fingerprints** (Morgan, MACCS, RDKit, etc.)
+- **Graph representations** with 3D coordinate preservation for GNNs
+- **Dual input support**: RDKit mol objects or SMILES strings
 
 ### 🧬 Protein Featurizer
-- **PDB File Processing**: Automatic standardization and cleaning
-- **Residue-Level Features**: Node features per amino acid residue
-- **Interaction Features**: Edge features for residue-residue interactions
-- **SASA Calculations**: Solvent accessible surface area analysis
-- **3D Structure Features**: Geometric and structural properties
+- **PDB file processing** with automatic standardization
+- **Residue-level features** including geometry, SASA, and contacts
+- **Graph representations** for protein structure networks
+- **Multiple feature extraction methods** for different ML applications
 
 ## 📦 Installation
 
-### Install from GitHub
-
 ```bash
+# Install from GitHub
 pip install git+https://github.com/eightmm/Featurizer.git
-```
 
-### Install for Development
-
-```bash
+# For development
 git clone https://github.com/eightmm/Featurizer.git
 cd Featurizer
 pip install -e .
 ```
 
 ### Dependencies
-
 ```bash
-# Core dependencies
-pip install torch numpy pandas rdkit-pypi
-
-# For protein features
-pip install freesasa biopython
-
-# For graph features (optional)
-pip install dgl
+pip install torch numpy pandas rdkit-pypi  # Core
+pip install freesasa biopython            # For proteins
+pip install dgl                           # For GNNs (optional)
 ```
 
 ## 🚀 Quick Start
 
 ### Molecule Features
-
 ```python
-from featurizer.molecule_featurizer import MoleculeFeaturizer
-from rdkit import Chem
+from featurizer import MoleculeFeaturizer
 
-# Method 1: Instance mode (efficient for multiple features from same molecule)
-featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")  # Parse once
-features = featurizer.get_feature()  # Uses cached molecule
-graph = featurizer.get_graph()  # Uses cached molecule
-fingerprints = featurizer.get_fingerprints()  # Uses cached molecule
-
-# Method 2: Static mode (backward compatible, good for one-off extraction)
+# Create featurizer
 featurizer = MoleculeFeaturizer()
-features = featurizer.get_feature("CC(=O)Oc1ccccc1C(=O)O")
 
-# Method 3: From RDKit mol object (recommended for 3D structures)
-mol = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")
-featurizer = MoleculeFeaturizer(mol)
-node, edge = featurizer.get_graph()  # Returns (node, edge) tuple with 3D coords
+# Extract all features
+features = featurizer.get_feature("CCO")  # ethanol
+# Returns dict with 'descriptor' (40D), 'morgan' (2048D), 'maccs' (167D), etc.
+
+# Get graph representation for GNNs
+node, edge = featurizer.get_graph("c1ccccc1")  # benzene
+# node['coords']: 3D coordinates, node['node_feats']: atom features
+# edge['edges']: connectivity, edge['edge_feats']: bond features
 ```
 
 ### Protein Features
-
 ```python
-from featurizer.protein_featurizer import ProteinFeaturizer
+from featurizer import ProteinFeaturizer
 
-# Method 1: Instance mode (efficient - parse PDB once, extract multiple features)
-featurizer = ProteinFeaturizer("protein.pdb")  # Parse once
-sequence = featurizer.get_sequence_features()  # Uses cached structure
-geometry = featurizer.get_geometric_features()  # Uses cached structure
-sasa = featurizer.get_sasa_features()  # Uses cached structure
-contacts = featurizer.get_contact_map(cutoff=8.0)  # Uses cached structure
+# Create featurizer
+featurizer = ProteinFeaturizer("protein.pdb")
 
-# Method 2: Get all features at once
+# Extract all features at once
 features = featurizer.get_all_features()
-node_features = features['node']  # Per-residue features
-edge_features = features['edge']  # Residue-residue interactions
+# node_features: per-residue features
+# edge_features: residue-residue interactions
 
-# Method 3: Without PDB standardization (for pre-cleaned PDBs)
-featurizer = ProteinFeaturizer("clean.pdb", standardize=False)
-features = featurizer.get_all_features()
+# Or extract specific features
+sasa = featurizer.get_sasa_features()       # Solvent accessibility
+contacts = featurizer.get_contact_map(8.0)  # Contact map at 8Å cutoff
 ```
 
-## 📊 Feature Details
+## 📊 Feature Overview
 
-### Molecule Features
+### Molecules
+- **Descriptors**: 40 normalized molecular properties → [Details](docs/molecular_descriptors.md)
+- **Fingerprints**: 9 types including Morgan, MACCS, RDKit → [Details](docs/feature_types.md#fingerprints)
+- **Graph Features**: 122D atom features, 44D bond features → [Details](docs/feature_types.md#graph-representations)
 
-#### `get_feature()` Returns:
-```python
-{
-    'descriptor': torch.Tensor,      # Shape: [20] - Molecular descriptors
-    'maccs': torch.Tensor,           # Shape: [167] - MACCS keys
-    'morgan': torch.Tensor,          # Shape: [2048] - Morgan fingerprint
-    'morgan_count': torch.Tensor,    # Shape: [2048] - Morgan count fingerprint
-    'feature_morgan': torch.Tensor,  # Shape: [2048] - Feature Morgan fingerprint
-    'rdkit': torch.Tensor,           # Shape: [2048] - RDKit fingerprint
-    'atom_pair': torch.Tensor,       # Shape: [2048] - Atom pair fingerprint
-    'topological_torsion': torch.Tensor,  # Shape: [2048] - Topological torsion
-    'pharmacophore2d': torch.Tensor  # Shape: [1024] - 2D pharmacophore
-}
-```
+### Proteins
+- **Node Features**: Residue type, geometry, SASA, secondary structure
+- **Edge Features**: Distances, orientations, contacts
+- **Sequence Features**: AAC, DPC, CTD descriptors → [Details](docs/feature_types.md#protein-features)
 
-**Molecular Descriptors (20 features):**
-- **Physicochemical (12)**: MW, LogP, TPSA, rotatable bonds, flexibility, HBD, HBA, n_atoms, n_bonds, n_rings, n_aromatic_rings, heteroatom_ratio
-- **Drug-likeness (5)**: Lipinski violations, passes Lipinski, QED, heavy atoms, fraction sp3
-- **Structural (3)**: Ring systems, max ring size, average ring size
-
-#### `get_graph()` Returns:
-Returns a tuple of (node, edge) dictionaries:
-
-```python
-node, edge = featurizer.get_graph(mol)
-
-# Node dictionary contains:
-node = {
-    'coords': torch.Tensor,      # Shape: [n_atoms, 3] - 3D coordinates
-    'node_feats': torch.Tensor    # Shape: [n_atoms, 122] - Atom features
-}
-
-# Edge dictionary contains:
-edge = {
-    'edges': torch.Tensor,        # Shape: [2, n_edges] - Source/destination indices
-    'edge_feats': torch.Tensor    # Shape: [n_edges, 44] - Bond features
-}
-```
-
-**Node Features (122 dimensions):**
-- Atom type (one-hot for H, C, N, O, S, P, F, Cl, Br, I, UNK)
-- Period and group in periodic table
-- Aromaticity, ring membership
-- Formal charge, electronegativity
-- Degree features and hybridization
-- Ring properties
-- SMARTS pattern matches (H-bond donor/acceptor, hydrophobic)
-- Stereochemistry
-- Partial charges
-- Extended neighborhood features
-
-**Edge Features (44 dimensions):**
-- Bond type (single, double, triple, aromatic)
-- Bond stereochemistry
-- Ring membership, conjugation
-- Rotatability
-- Degree-based features
-- Ring properties
-
-### Protein Features
-
-#### Available Individual Methods:
-- `get_sequence_features()`: Residue types and one-hot encoding
-- `get_geometric_features()`: Dihedrals, backbone curvature/torsion, self-distances
-- `get_sasa_features()`: Solvent Accessible Surface Area (10 components per residue)
-- `get_contact_map()`: Residue-residue contacts and distance matrices
-- `get_relative_position()`: Relative position encoding between residues
-- `get_node_features()`: All per-residue scalar and vector features
-- `get_edge_features()`: All interaction features between residues
-- `get_terminal_flags()`: N-terminal and C-terminal residue identification
-
-#### Node Features (Per Residue):
-- Residue type (20 amino acids + UNK)
-- Terminal flags (N-terminal, C-terminal)
-- Geometric features (distances, angles, dihedrals)
-- SASA (Solvent Accessible Surface Area)
-- Secondary structure elements
-- Local coordinate frames
-
-#### Edge Features (Residue Pairs):
-- Spatial distances (CA-CA, SC-SC, CA-SC, SC-CA)
-- Relative position encoding
-- 3D orientation vectors
-- Contact indicators
-
-## 🔧 Advanced Usage
-
-### Working with 3D Structures
-
-```python
-from rdkit import Chem
-from rdkit.Chem import AllChem
-
-# Create molecule with 3D coordinates
-mol = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")
-AllChem.EmbedMolecule(mol)  # Generate 3D structure
-AllChem.UFFOptimizeMolecule(mol)  # Optimize geometry
-
-# Featurizer preserves 3D coordinates
-featurizer = MoleculeFeaturizer()
-node, edge = featurizer.get_graph(mol, add_hs=True)  # Adds H with proper 3D coords
-coords = node['coords']  # 3D coordinates preserved
-```
-
-### Custom Feature Extraction
-
-```python
-# Molecule features - direct access to specific methods
-from featurizer.molecule_featurizer.molecule_feature import MoleculeFeaturizer
-
-mol_featurizer = MoleculeFeaturizer()
-mol = Chem.MolFromSmiles("CCO")
-
-# Get individual feature types
-phys_features = mol_featurizer.get_physicochemical_features(mol)
-drug_features = mol_featurizer.get_druglike_features(mol)
-struct_features = mol_featurizer.get_structural_features(mol)
-fingerprints = mol_featurizer.get_fingerprints(mol)
-
-# Protein features - direct access to specific methods
-from featurizer.protein_featurizer import ProteinFeaturizer
-
-prot_featurizer = ProteinFeaturizer()
-
-# Get individual feature types
-sequence = prot_featurizer.get_sequence_features("protein.pdb")
-geometry = prot_featurizer.get_geometric_features("protein.pdb")
-sasa = prot_featurizer.get_sasa_features("protein.pdb")
-contacts = prot_featurizer.get_contact_map("protein.pdb")
-rel_position = prot_featurizer.get_relative_position("protein.pdb")
-node_feats = prot_featurizer.get_node_features("protein.pdb")
-edge_feats = prot_featurizer.get_edge_features("protein.pdb")
-terminal = prot_featurizer.get_terminal_flags("protein.pdb")
-```
+## 🔧 Advanced Examples
 
 ### Batch Processing
-
 ```python
-# Process multiple molecules
-molecules = ["CCO", "CC(=O)O", "c1ccccc1"]
-features_list = []
+# Process multiple molecules efficiently
+smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
+features = [featurizer.get_feature(smi) for smi in smiles_list]
 
-for smiles in molecules:
-    features = featurizer.get_feature(smiles)
-    features_list.append(features)
-
-# Process multiple proteins
-pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
-protein_featurizer = ProteinFeaturizer()
-
-for pdb_file in pdb_files:
-    features = protein_featurizer.extract(pdb_file)
-    # Save or process features
+# Stack for neural network input
+import torch
+descriptors = torch.stack([f['descriptor'] for f in features])
 ```
 
-### Integration with Graph Neural Networks
-
+### GNN Integration
 ```python
 import dgl
-import torch.nn as nn
 
 # Get molecular graph
 node, edge = featurizer.get_graph(mol)
 
-# Create DGL graph for GNN
-# Extract source and destination indices from edges tensor
-src = edge['edges'][0]  # First row contains source indices
-dst = edge['edges'][1]  # Second row contains destination indices
-g = dgl.graph((src, dst))
-
-# Add features to graph
+# Create DGL graph
+g = dgl.graph((edge['edges'][0], edge['edges'][1]))
 g.ndata['feat'] = node['node_feats']
-g.ndata['coords'] = node['coords']
 g.edata['feat'] = edge['edge_feats']
-
-# Use with your GNN model
-# model = YourGNNModel(in_dim=122, hidden_dim=128, out_dim=1)
-# output = model(g, g.ndata['feat'], g.edata['feat'])
 ```
+
+### 3D Structure Preservation
+```python
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
+# Generate 3D coordinates
+mol = Chem.MolFromSmiles("CCO")
+AllChem.EmbedMolecule(mol)
+AllChem.UFFOptimizeMolecule(mol)
+
+# Extract with 3D coords preserved
+node, edge = featurizer.get_graph(mol)
+coords_3d = node['coords']  # [n_atoms, 3]
+```
+
+## 📖 Documentation
+
+- [Molecular Descriptors Reference](docs/molecular_descriptors.md)
+- [Feature Types Guide](docs/feature_types.md)
+- [API Examples](examples/)
 
 ## 📋 Requirements
 
 - Python ≥ 3.7
-- PyTorch ≥ 1.9.0
-- RDKit ≥ 2020.09
-- NumPy ≥ 1.19.0
-- Pandas ≥ 1.3.0
-- DGL ≥ 0.9.0 (optional, for graph features)
-- FreeSASA ≥ 2.1.0 (for protein SASA)
-- BioPython ≥ 1.79 (for protein processing)
-
-## 🏗️ Project Structure
-
-```
-featurizer/
-├── molecule_featurizer/
-│   ├── __init__.py
-│   └── molecule_feature.py    # Core molecule featurization
-├── protein_featurizer/
-│   ├── __init__.py
-│   └── protein_feature.py     # Core protein featurization
-└── __init__.py                 # Package exports
-```
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+- PyTorch ≥ 2.0.0
+- RDKit ≥ 2023.03
+- NumPy ≥ 1.20.0
+- See [requirements.txt](requirements.txt) for full list
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
+Contributions welcome! Please:
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file
 
 ## 📖 Citation
 
-If you use this package in your research, please cite:
-
 ```bibtex
 @software{featurizer2025,
-  title = {Featurizer: A unified framework for molecular and protein feature extraction},
+  title = {Featurizer: Unified molecular and protein feature extraction},
   author = {Jaemin Sim},
   year = {2025},
   url = {https://github.com/eightmm/Featurizer}
 }
 ```
 
-## 🐛 Issues and Support
+## 🐛 Support
 
-For bugs and feature requests, please use the [GitHub Issues](https://github.com/eightmm/Featurizer/issues) page.
-
-## 📊 Version History
-
-- **v1.0.0** (2025-01): Major refactoring
-  - Unified MoleculeFeaturizer class
-  - Enhanced 3D coordinate support
-  - Improved graph feature generation
-  - Removed domain-specific features for generalization
+For issues and questions, please use [GitHub Issues](https://github.com/eightmm/Featurizer/issues).
 
 ---
-
 Made with ❤️ for the computational chemistry and bioinformatics community

@@ -124,6 +124,39 @@ class MoleculeFeaturizer:
         n_heteroatoms = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() not in [1, 6])
         features['heteroatom_ratio'] = n_heteroatoms / mol.GetNumAtoms()
 
+        # Additional general molecular descriptors
+        # Topological and complexity descriptors
+        features['balaban_j'] = min(Descriptors.BalabanJ(mol) / 5.0, 1.0)  # Topological index
+        features['bertz_ct'] = min(Descriptors.BertzCT(mol) / 2000.0, 1.0)  # Molecular complexity
+        features['chi0'] = min(Descriptors.Chi0(mol) / 50.0, 1.0)  # Connectivity index 0
+        features['chi1'] = min(Descriptors.Chi1(mol) / 30.0, 1.0)  # Connectivity index 1
+        features['hall_kier_alpha'] = min(abs(Descriptors.HallKierAlpha(mol)) / 5.0, 1.0) if Descriptors.HallKierAlpha(mol) != -1 else 0.0
+        features['kappa1'] = min(Descriptors.Kappa1(mol) / 50.0, 1.0)  # Shape index 1
+        features['kappa2'] = min(Descriptors.Kappa2(mol) / 20.0, 1.0)  # Shape index 2
+        features['kappa3'] = min(Descriptors.Kappa3(mol) / 10.0, 1.0)  # Shape index 3
+
+        # Electronic and charge-related descriptors
+        features['mol_mr'] = min(Descriptors.MolMR(mol) / 200.0, 1.0)  # Molar refractivity
+        features['labute_asa'] = min(Descriptors.LabuteASA(mol) / 500.0, 1.0)  # Accessible surface area
+        features['num_radical_electrons'] = min(Descriptors.NumRadicalElectrons(mol) / 5.0, 1.0)
+        features['num_valence_electrons'] = min(Descriptors.NumValenceElectrons(mol) / 500.0, 1.0)
+
+        # Ring and structural complexity
+        features['num_saturated_rings'] = min(rdMolDescriptors.CalcNumSaturatedRings(mol) / 10.0, 1.0)
+        features['num_aliphatic_rings'] = min(rdMolDescriptors.CalcNumAliphaticRings(mol) / 10.0, 1.0)
+        features['num_saturated_heterocycles'] = min(rdMolDescriptors.CalcNumSaturatedHeterocycles(mol) / 8.0, 1.0)
+        features['num_aliphatic_heterocycles'] = min(rdMolDescriptors.CalcNumAliphaticHeterocycles(mol) / 8.0, 1.0)
+        features['num_aromatic_heterocycles'] = min(rdMolDescriptors.CalcNumAromaticHeterocycles(mol) / 8.0, 1.0)
+
+        # Atom type counts (general chemistry)
+        features['num_heteroatoms'] = min(rdMolDescriptors.CalcNumHeteroatoms(mol) / 30.0, 1.0)
+        # Calculate formal charge as sum of all atomic formal charges
+        total_formal_charge = sum(atom.GetFormalCharge() for atom in mol.GetAtoms())
+        features['formal_charge'] = (total_formal_charge + 5) / 10.0  # Normalized around 0
+
+        # Additional: Molecular branching complexity
+        features['chi0n'] = min(Descriptors.Chi0n(mol) / 50.0, 1.0)  # Normalized connectivity index
+
         return features
 
     def get_druglike_features(self, mol):
@@ -259,7 +292,12 @@ class MoleculeFeaturizer:
         descriptor_keys = [
             'mw', 'logp', 'tpsa', 'n_rotatable_bonds', 'flexibility',
             'hbd', 'hba', 'n_atoms', 'n_bonds', 'n_rings', 'n_aromatic_rings',
-            'heteroatom_ratio'
+            'heteroatom_ratio', 'balaban_j', 'bertz_ct', 'chi0', 'chi1',
+            'hall_kier_alpha', 'kappa1', 'kappa2', 'kappa3', 'mol_mr',
+            'labute_asa', 'num_radical_electrons', 'num_valence_electrons',
+            'num_saturated_rings', 'num_aliphatic_rings', 'num_saturated_heterocycles',
+            'num_aliphatic_heterocycles', 'num_aromatic_heterocycles',
+            'num_heteroatoms', 'formal_charge', 'chi0n'
         ]
         for key in descriptor_keys:
             all_descriptors.append(float(physicochemical_features[key]))
