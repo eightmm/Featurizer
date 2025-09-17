@@ -58,13 +58,13 @@ contacts = featurizer.get_contact_map(cutoff=8.0)  # Customizable distance thres
 
 ### Molecules
 - **Descriptors**: 40 normalized molecular properties → [Details](docs/molecular_descriptors.md)
-- **Fingerprints**: 9 types including Morgan, MACCS, RDKit → [Details](docs/feature_types.md#fingerprints)
-- **Graph Features**: 122D atom features, 44D bond features → [Details](docs/feature_types.md#graph-representations)
+- **Fingerprints**: 9 types including Morgan, MACCS, RDKit → [Details](docs/molecule_features.md)
+- **Graph Features**: 122D atom features, 44D bond features → [Details](docs/molecule_features.md#3-graph-representations-get_graph)
 
 ### Proteins
 - **Node Features**: Residue type, geometry, SASA, secondary structure
 - **Edge Features**: Distances, orientations, contacts
-- **Graph Representations**: Residue-residue interaction networks → [Details](docs/feature_types.md#protein-features)
+- **Graph Representations**: Residue-residue interaction networks → [Details](docs/protein_features.md)
 
 ## 🔧 Advanced Examples
 
@@ -120,9 +120,11 @@ coords_3d = node['coords']
 
 ## 📖 Documentation
 
-- [Molecular Descriptors Reference](docs/molecular_descriptors.md)
-- [Feature Types Guide](docs/feature_types.md)
-- [API Examples](examples/)
+- **[Feature Types Overview](docs/feature_types.md)** - Quick overview of all features
+- **[Molecule Features](docs/molecule_features.md)** - Detailed molecule feature guide
+- **[Protein Features](docs/protein_features.md)** - Detailed protein feature guide
+- **[Molecular Descriptors](docs/molecular_descriptors.md)** - Complete descriptor reference
+- **[Examples](examples/)** - Code examples and tutorials
 
 ## 🤝 Contributing
 

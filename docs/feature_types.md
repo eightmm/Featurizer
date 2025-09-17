@@ -1,176 +1,102 @@
-# Feature Types Documentation
+# Feature Types Overview
 
-## Molecular Features
+The Featurizer package provides comprehensive feature extraction for both molecules and proteins. This document provides a high-level overview of available features.
 
-### Fingerprints
+## 📚 Detailed Documentation
 
-#### Morgan Fingerprint
-- **Size**: 2048 bits
-- **Radius**: 2 (ECFP4-like)
-- **Type**: Circular fingerprint
-- **Use case**: Similarity searching, QSAR modeling
+- **[Molecule Features](molecule_features.md)** - Complete guide for molecular feature extraction
+- **[Protein Features](protein_features.md)** - Complete guide for protein feature extraction
+- **[Molecular Descriptors](molecular_descriptors.md)** - Detailed reference for 40 molecular descriptors
 
-#### MACCS Keys
-- **Size**: 167 bits
-- **Type**: Structural keys
-- **Use case**: Substructure searching, clustering
+## 🧪 Molecule Features Summary
 
-#### RDKit Fingerprint
-- **Size**: 2048 bits
-- **Type**: Daylight-like topological fingerprint
-- **Use case**: General purpose molecular comparison
+### Available Features
+- **40 Molecular Descriptors**: Physicochemical, topological, and structural properties
+- **9 Fingerprint Types**: Morgan, MACCS, RDKit, Atom Pair, etc.
+- **Graph Representations**: 122D atom features, 44D bond features with 3D coordinates
 
-#### Atom Pair Fingerprint
-- **Size**: 2048 bits
-- **Type**: Atom pair descriptors
-- **Use case**: Capturing atomic environments
-
-#### Topological Torsion Fingerprint
-- **Size**: 2048 bits
-- **Type**: Four-atom torsion patterns
-- **Use case**: Conformational analysis
-
-#### 2D Pharmacophore Fingerprint
-- **Size**: 1024 bits
-- **Type**: Pharmacophoric features
-- **Use case**: Pharmacophore-based screening
-
-### Graph Representations
-
-#### Node Features (per atom)
-- **Dimensions**: Variable based on molecule size
-- **Features**:
-  - Atom type (one-hot)
-  - Degree
-  - Formal charge
-  - Hybridization
-  - Aromaticity
-  - Ring membership
-
-#### Edge Features (per bond)
-- **Dimensions**: Variable based on molecule size
-- **Features**:
-  - Bond type (one-hot)
-  - Conjugation
-  - Ring membership
-  - Stereochemistry
-
-## Protein Features
-
-### Sequence Features (`get_sequence_features()`)
-- **Residue Types**: Integer encoding for 20 amino acids + UNK
-- **One-hot Encoding**: 21-dimensional one-hot vectors per residue
-- **Number of Residues**: Total residue count
-
-### Geometric Features (`get_geometric_features()`)
-- **Dihedral Angles**: Phi, psi, omega, and chi angles
-- **Has Chi Angles**: Boolean flags for side chain torsions
-- **Backbone Curvature**: Local backbone curvature measurements
-- **Backbone Torsion**: Local backbone torsion angles
-- **Self Distances**: Intra-residue atomic distances
-- **Self Vectors**: Intra-residue directional vectors
-- **Coordinates**: 3D coordinates for backbone and sidechain atoms
-
-### SASA Features (`get_sasa_features()`)
-- **Solvent Accessible Surface Area**: 10 components per residue
-  - Total SASA
-  - Polar/apolar SASA
-  - Backbone/sidechain SASA
-  - Relative SASA values
-
-### Contact Features (`get_contact_map(cutoff)`)
-- **Customizable Distance Threshold**: Any distance cutoff in Ångströms (default: 8.0)
-- **Contact Matrix**: Binary contact map at specified cutoff
-- **Distance Matrix**: CA-CA, SC-SC, CA-SC, SC-CA distances between residues
-- **Edge Indices**: Residue pairs within distance cutoff
-- **Common thresholds**:
-  - 4.5 Å: Very close contacts (e.g., hydrogen bonds, salt bridges)
-  - 8.0 Å: Standard contacts (typical protein interactions)
-  - 12.0 Å: Extended interactions (long-range effects)
-
-### Node Features (`get_node_features()`)
-Combines all per-residue features:
-- Residue type and one-hot encoding
-- Terminal flags (N-terminal, C-terminal)
-- Geometric features (dihedrals, curvature, torsion)
-- SASA values
-- Local coordinate frames
-
-### Edge Features (`get_edge_features()`)
-- **Spatial Distances**: CA-CA, SC-SC, CA-SC, SC-CA distances
-- **Relative Position Encoding**: Sequence separation and spatial arrangement
-- **Orientation Vectors**: 3D unit vectors between residues
-- **Contact Indicators**: Binary contact flags
-
-## Usage Examples
-
-### Extracting Specific Features
-
+### Quick Example
 ```python
-from featurizer import MoleculeFeaturizer, ProteinFeaturizer
+from featurizer import MoleculeFeaturizer
 
-# Molecule features
-mol_featurizer = MoleculeFeaturizer()
-mol_features = mol_featurizer.get_feature("CCO")
-
-# Access individual components
-descriptors = mol_features['descriptor']  # Shape: [40]
-morgan_fp = mol_features['morgan']       # Shape: [2048]
-maccs_keys = mol_features['maccs']       # Shape: [167]
-
-# Protein features
-prot_featurizer = ProteinFeaturizer("protein.pdb")
-
-# Get specific feature types
-sequence = prot_featurizer.get_sequence_features()
-geometry = prot_featurizer.get_geometric_features()
-sasa = prot_featurizer.get_sasa_features()
-contacts = prot_featurizer.get_contact_map(cutoff=8.0)
+featurizer = MoleculeFeaturizer()
+features = featurizer.get_feature("CCO")  # All features
+node, edge = featurizer.get_graph("CCO")  # Graph representation
 ```
 
-### Graph Features for GNN
+➡️ See [Molecule Features Documentation](molecule_features.md) for complete details
 
+## 🧬 Protein Features Summary
+
+### Available Features
+- **Sequence Features**: Residue types and one-hot encoding
+- **Geometric Features**: Dihedrals, curvature, torsion, distances
+- **SASA Features**: 10-component solvent accessibility analysis
+- **Contact Maps**: Customizable distance thresholds (4.5-12.0 Å)
+- **Graph Representations**: Node and edge features for protein networks
+
+### Quick Example
 ```python
-# Get graph representation
-graph = mol_featurizer.get_graph("c1ccccc1")
+from featurizer import ProteinFeaturizer
 
-node_features = graph['node_feat']  # Shape: [n_atoms, n_features]
-edge_features = graph['edge_feat']  # Shape: [n_edges, e_features]
-edge_index = graph['edge_index']    # Shape: [2, n_edges]
+featurizer = ProteinFeaturizer("protein.pdb")
+features = featurizer.get_all_features()  # All features
+contacts = featurizer.get_contact_map(cutoff=8.0)  # Contact map
 ```
 
-## Feature Selection Guidelines
+➡️ See [Protein Features Documentation](protein_features.md) for complete details
 
-### For Machine Learning
-- **Small datasets (<1000)**: Use descriptors + MACCS keys
-- **Medium datasets (1000-10000)**: Add Morgan fingerprints
-- **Large datasets (>10000)**: Use all fingerprints or graph features
+## 🔧 Common Use Cases
 
-### For Specific Applications
-- **Similarity search**: Morgan or MACCS fingerprints
-- **ADMET prediction**: Descriptors + selected fingerprints
-- **Activity prediction**: Morgan + descriptors
-- **Deep learning**: Graph representations
+### Drug Discovery
+- Molecular descriptors for ADMET prediction
+- Morgan fingerprints for similarity searching
+- Protein-ligand interaction features
 
-## Performance Considerations
+### Structural Biology
+- Protein contact maps for fold recognition
+- SASA for binding site identification
+- Geometric features for structure validation
 
-### Memory Usage
-- Descriptors: ~160 bytes per molecule
-- Fingerprints: ~10 KB per molecule (all types)
-- Graph features: Variable (depends on molecule size)
+### Machine Learning
+- Graph features for GNNs
+- Descriptors for traditional ML (RF, XGBoost)
+- Fingerprints for clustering and classification
 
-### Speed
-- Descriptors: ~1ms per molecule
-- Fingerprints: ~5ms per molecule (all types)
-- Graph features: ~10ms per molecule
+## 🚀 Quick Start Guide
 
-### Batch Processing
-```python
-# Efficient batch processing
-smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
-batch_features = [mol_featurizer.get_feature(smi) for smi in smiles_list]
-
-# Stack for neural network input
-import torch
-descriptors_batch = torch.stack([f['descriptor'] for f in batch_features])
+### Installation
+```bash
+pip install git+https://github.com/eightmm/Featurizer.git
 ```
+
+### Basic Usage
+```python
+# Molecules
+from featurizer import MoleculeFeaturizer
+mol_feat = MoleculeFeaturizer()
+mol_features = mol_feat.get_feature("c1ccccc1")
+
+# Proteins
+from featurizer import ProteinFeaturizer
+prot_feat = ProteinFeaturizer("structure.pdb")
+prot_features = prot_feat.get_all_features()
+```
+
+## 📊 Performance Guidelines
+
+### Molecules
+- **Descriptors**: ~1ms per molecule
+- **All fingerprints**: ~5ms per molecule
+- **Graph features**: ~10ms per molecule
+
+### Proteins
+- **Small (<100 residues)**: ~100ms total
+- **Medium (100-500 residues)**: ~200-300ms
+- **Large (>500 residues)**: ~500ms+
+
+## 📖 Further Reading
+
+- [API Reference](../README.md)
+- [Examples](../examples/)
+- [GitHub Repository](https://github.com/eightmm/Featurizer)
