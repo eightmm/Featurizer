@@ -35,19 +35,23 @@ class MoleculeFeaturizer:
         >>>     features = featurizer.get_feature()
     """
 
-    def __init__(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True):
+    def __init__(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True,
+                 custom_smarts: Optional[Dict[str, str]] = None):
         """
         Initialize featurizer with a molecule.
 
         Args:
             mol_or_smiles: Molecule (RDKit mol or SMILES string)
             add_hs: Whether to add hydrogens to molecules
+            custom_smarts: Optional dictionary of custom SMARTS patterns
+                          e.g., {'aromatic_nitrogen': 'n', 'carboxyl': 'C(=O)O'}
 
         Raises:
             ValueError: If molecule cannot be parsed
         """
         self._core = CoreFeaturizer()
         self.add_hs = add_hs
+        self.custom_smarts = custom_smarts or {}
         self._cache = {}
 
         # Store input for reference
@@ -110,24 +114,78 @@ class MoleculeFeaturizer:
         features = self.get_feature()
         return {k: v for k, v in features.items() if k != 'descriptor'}
 
-    def get_graph(self, distance_cutoff: Optional[float] = None) -> Tuple[Dict, Dict]:
+    def _get_custom_smarts_features(self) -> Optional[torch.Tensor]:
+        """
+        Compute custom SMARTS pattern matches for each atom.
+
+        Returns:
+            torch.Tensor or None: Binary features [n_atoms, n_patterns] if patterns provided
+        """
+        if not self.custom_smarts:
+            return None
+
+        cache_key = 'custom_smarts_features'
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        num_atoms = self._mol.GetNumAtoms()
+        num_patterns = len(self.custom_smarts)
+        features = torch.zeros(num_atoms, num_patterns)
+
+        for idx, (name, pattern) in enumerate(self.custom_smarts.items()):
+            try:
+                # Parse SMARTS pattern
+                smart_mol = Chem.MolFromSmarts(pattern)
+                if smart_mol is None:
+                    print(f"Warning: Invalid SMARTS pattern for '{name}': {pattern}")
+                    continue
+
+                # Find matches
+                matches = self._mol.GetSubstructMatches(smart_mol)
+
+                # Mark matched atoms
+                for match in matches:
+                    for atom_idx in match:
+                        if atom_idx < num_atoms:
+                            features[atom_idx, idx] = 1.0
+
+            except Exception as e:
+                print(f"Warning: Error processing SMARTS pattern '{name}': {e}")
+
+        self._cache[cache_key] = features
+        return features
+
+    def get_graph(self, distance_cutoff: Optional[float] = None,
+                  include_custom_smarts: bool = True) -> Tuple[Dict, Dict]:
         """
         Get graph representation with node and edge features.
 
         Args:
             distance_cutoff: Optional distance cutoff for edges (if 3D available)
                            If None, uses bond connectivity
+            include_custom_smarts: Whether to include custom SMARTS features in node features
 
         Returns:
             Tuple of (node, edge) dictionaries:
-            - node: {'node_feats', 'coords'}
+            - node: {'node_feats', 'coords', 'custom_smarts_feats' (if available)}
             - edge: {'edges', 'edge_feats'}
         """
-        cache_key = f'graph_{distance_cutoff}'
+        cache_key = f'graph_{distance_cutoff}_{include_custom_smarts}'
 
         if cache_key not in self._cache:
             # Get basic graph structure
             node, edge = self._core.get_graph(self._mol)
+
+            # Add custom SMARTS features if requested
+            if include_custom_smarts and self.custom_smarts:
+                custom_features = self._get_custom_smarts_features()
+                if custom_features is not None:
+                    # Concatenate custom features to node features
+                    original_feats = node['node_feats']
+                    node['node_feats'] = torch.cat([original_feats, custom_features], dim=1)
+                    # Also store separately for reference
+                    node['custom_smarts_feats'] = custom_features
+                    node['custom_smarts_names'] = list(self.custom_smarts.keys())
 
             # If distance cutoff specified and 3D coords available, filter edges
             if distance_cutoff is not None and self.has_3d and 'coords' in node:
@@ -167,6 +225,26 @@ class MoleculeFeaturizer:
             self._cache[cache_key] = features['morgan']
 
         return self._cache[cache_key]
+
+    def get_custom_smarts_features(self) -> Optional[Dict[str, Any]]:
+        """
+        Get custom SMARTS pattern matches for each atom.
+
+        Returns:
+            Dictionary with 'features' tensor and 'names' list, or None if no patterns
+        """
+        if not self.custom_smarts:
+            return None
+
+        features = self._get_custom_smarts_features()
+        if features is None:
+            return None
+
+        return {
+            'features': features,  # [n_atoms, n_patterns] binary tensor
+            'names': list(self.custom_smarts.keys()),
+            'patterns': self.custom_smarts
+        }
 
     def get_3d_coordinates(self) -> Optional[torch.Tensor]:
         """

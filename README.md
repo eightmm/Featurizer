@@ -56,6 +56,32 @@ res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)
 
 ## 🔧 Advanced Examples
 
+### Custom SMARTS Patterns for Molecules
+```python
+from featurizer import MoleculeFeaturizer
+
+# Define custom SMARTS patterns
+custom_patterns = {
+    'aromatic_nitrogen': 'n',
+    'carboxyl': 'C(=O)O',
+    'hydroxyl': '[OH]',
+    'amine': '[NX3;H2,H1;!$(NC=O)]'
+}
+
+# Initialize with custom patterns
+featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
+
+# Get graph with custom features included
+node, edge = featurizer.get_graph()
+# node['node_feats'] now includes custom SMARTS matches
+# node['custom_smarts_feats'] contains just the custom features
+# node['custom_smarts_names'] contains pattern names
+
+# Or get custom features separately
+custom_feats = featurizer.get_custom_smarts_features()
+# Returns: {'features': tensor, 'names': [...], 'patterns': {...}}
+```
+
 ### Contact Maps with Different Thresholds
 ```python
 from featurizer import ProteinFeaturizer

@@ -22,7 +22,9 @@ coordinates = node['coords']        # [n_atoms, 3]
 edge_indices = edge['edges']        # [2, n_edges]
 ```
 
-## Node Features (122 dimensions)
+## Node Features (122+ dimensions)
+
+Base features are 122 dimensions, with optional custom SMARTS patterns adding additional dimensions.
 
 ### Atom Type (44 dimensions)
 One-hot encoding for common atom types:
@@ -213,6 +215,39 @@ All continuous features are normalized:
 - **Small molecules (<50 atoms)**: ~5ms
 - **Medium molecules (50-100 atoms)**: ~10ms
 - **Large molecules (>100 atoms)**: ~20ms
+
+## Custom SMARTS Features
+
+Add domain-specific features using SMARTS patterns:
+
+```python
+from featurizer import MoleculeFeaturizer
+
+# Define pharmacophore patterns
+pharmacophore_patterns = {
+    'h_donor': '[NX3,NX4+][H]',
+    'h_acceptor': '[O,N;!H0]',
+    'aromatic': 'a',
+    'halogen': '[F,Cl,Br,I]',
+    'positive': '[*+]',
+    'negative': '[*-]'
+}
+
+# Initialize with patterns
+featurizer = MoleculeFeaturizer("CCN(CC)c1ccccc1", custom_smarts=pharmacophore_patterns)
+
+# Get graph with custom features
+node, edge = featurizer.get_graph()
+
+# Access custom features
+custom_feats = node['custom_smarts_feats']  # [n_atoms, n_patterns]
+pattern_names = node['custom_smarts_names']  # List of pattern names
+
+# Check which atoms match which patterns
+for i, name in enumerate(pattern_names):
+    matching_atoms = torch.where(custom_feats[:, i] > 0)[0]
+    print(f"{name}: atoms {matching_atoms.tolist()}")
+```
 
 ## Advanced Usage
 
