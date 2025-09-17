@@ -318,3 +318,108 @@ class ProteinFeaturizer:
 
     # Alias for backward compatibility
     extract = get_all_features
+
+    # ============== ATOM-LEVEL FEATURES ==============
+
+    def get_atom_features(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Get atom-level tokenized features.
+
+        Returns:
+            Tuple of (token, coord):
+                - token: Atom type tokens (175 types)
+                - coord: 3D coordinates
+        """
+        if 'atom_features' not in self._cache:
+            from .atom_featurizer import AtomFeaturizer
+            atom_featurizer = AtomFeaturizer()
+
+            # Use the standardized PDB if available
+            pdb_to_use = self.tmp_pdb if self.tmp_pdb else self.input_file
+            token, coord = atom_featurizer.get_protein_atom_features(pdb_to_use)
+            self._cache['atom_features'] = (token, coord)
+        return self._cache['atom_features']
+
+    # Aliases for clarity
+    get_atom_tokens = get_atom_features
+    get_atom_level_features = get_atom_features
+
+    def get_atom_features_with_sasa(self) -> Dict[str, Any]:
+        """
+        Get comprehensive atom features including SASA.
+
+        Returns:
+            Dictionary with atom features and SASA
+        """
+        if 'atom_features_sasa' not in self._cache:
+            from .atom_featurizer import AtomFeaturizer
+            atom_featurizer = AtomFeaturizer()
+
+            # Use the standardized PDB if available
+            pdb_to_use = self.tmp_pdb if self.tmp_pdb else self.input_file
+            features = atom_featurizer.get_all_atom_features(pdb_to_use)
+            self._cache['atom_features_sasa'] = features
+        return self._cache['atom_features_sasa']
+
+    # Aliases for clarity
+    get_atom_sasa = get_atom_features_with_sasa
+    get_atom_level_features_with_sasa = get_atom_features_with_sasa
+    get_atom_level_sasa = get_atom_features_with_sasa
+
+    def get_atom_coordinates(self) -> torch.Tensor:
+        """
+        Get only atom-level 3D coordinates.
+
+        Returns:
+            torch.Tensor: [n_atoms, 3] coordinates
+        """
+        token, coord = self.get_atom_features()
+        return coord
+
+    def get_atom_tokens_only(self) -> torch.Tensor:
+        """
+        Get only atom-level tokens without coordinates.
+
+        Returns:
+            torch.Tensor: [n_atoms] token IDs (0-174)
+        """
+        token, coord = self.get_atom_features()
+        return token
+
+    # ============== RESIDUE-LEVEL FEATURES ==============
+    # Adding clearer aliases for residue-level methods
+
+    # Sequence features
+    get_residue_sequence = get_sequence_features
+    get_residue_types = get_sequence_features
+    get_residue_level_sequence = get_sequence_features
+
+    # Geometric features
+    get_residue_geometry = get_geometric_features
+    get_residue_dihedrals = get_geometric_features
+    get_residue_level_geometry = get_geometric_features
+
+    # SASA features
+    get_residue_sasa = get_sasa_features
+    get_residue_level_sasa = get_sasa_features
+
+    # Contact map
+    get_residue_contacts = get_contact_map
+    get_residue_contact_map = get_contact_map
+    get_residue_level_contacts = get_contact_map
+
+    # Node features
+    get_residue_node_features = get_node_features
+    get_residue_level_node_features = get_node_features
+
+    # Edge features
+    get_residue_edge_features = get_edge_features
+    get_residue_level_edge_features = get_edge_features
+
+    # Standard features (residue-level by default)
+    get_residue_features = get_features
+    get_residue_level_features = get_features
+
+    # All features
+    get_all_residue_features = get_all_features
+    get_residue_level_all_features = get_all_features

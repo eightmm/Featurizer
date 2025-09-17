@@ -50,10 +50,14 @@ from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
 
-node, edge = featurizer.get_features()  # Standard format
-features = featurizer.get_all_features()
-sasa = featurizer.get_sasa_features()
-contacts = featurizer.get_contact_map(cutoff=8.0)  # Customizable distance threshold (Å)
+# Atom-level features (explicit naming)
+atom_tokens, atom_coords = featurizer.get_atom_features()  # 175 token types
+atom_features = featurizer.get_atom_sasa()  # With SASA
+
+# Residue-level features (explicit naming)
+node, edge = featurizer.get_residue_features()  # Standard format
+sasa = featurizer.get_residue_sasa()
+contacts = featurizer.get_residue_contacts(cutoff=8.0)  # Customizable distance threshold (Å)
 ```
 
 ## 📊 Feature Overview

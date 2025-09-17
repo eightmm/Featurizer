@@ -26,7 +26,14 @@ The atom featurizer uses a sophisticated tokenization system that encodes each a
 
 ## Feature Extraction Methods
 
-### 1. Basic Atom Features (`get_atom_features()`)
+### Method Naming Convention
+All atom-level methods have clear naming to distinguish from residue-level:
+- `get_atom_features()` → Aliases: `get_atom_tokens()`, `get_atom_level_features()`
+- `get_atom_features_with_sasa()` → Aliases: `get_atom_sasa()`, `get_atom_level_sasa()`
+- `get_atom_coordinates()` → Get only 3D coordinates
+- `get_atom_tokens_only()` → Get only token IDs
+
+### 1. Basic Atom Features (`get_atom_features()` / `get_atom_tokens()`)
 
 Extract atom-level tokenized features and coordinates.
 
@@ -34,7 +41,7 @@ Extract atom-level tokenized features and coordinates.
 from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
-token, coord = featurizer.get_atom_features()
+token, coord = featurizer.get_atom_features()  # or get_atom_tokens()
 
 # Returns:
 # token: torch.Tensor [n_atoms] - Atom type tokens (0-174)
@@ -46,7 +53,7 @@ token, coord = featurizer.get_atom_features()
 Comprehensive atom features including solvent accessible surface area.
 
 ```python
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 
 # Returns dictionary:
 {
@@ -90,7 +97,7 @@ Uses FreeSASA library for accurate solvent accessible surface area calculation.
 
 **SASA Values:**
 ```python
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 sasa_per_atom = features['sasa']  # Ų per atom
 
 # Statistics
@@ -130,8 +137,11 @@ import torch
 
 featurizer = ProteinFeaturizer("protein.pdb")
 
-# Get atom features
-token, coord = featurizer.get_atom_features()
+# Get atom features with clear naming
+token, coord = featurizer.get_atom_features()  # or get_atom_tokens()
+# Or get separately
+coords = featurizer.get_atom_coordinates()
+tokens = featurizer.get_atom_tokens_only()
 
 print(f"Number of atoms: {len(token)}")
 print(f"Unique atom types: {torch.unique(token).shape[0]}")
@@ -141,7 +151,7 @@ print(f"Coordinate shape: {coord.shape}")
 ### SASA-Based Analysis
 ```python
 # Get features with SASA
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 
 # Analyze surface exposure
 sasa = features['sasa']
@@ -167,7 +177,7 @@ for res_type in torch.unique(residue_tokens):
 import torch
 from scipy.spatial import distance_matrix
 
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 
 # Build atom-level contact graph
 coords = features['coord'].numpy()
@@ -207,7 +217,7 @@ class AtomLevelModel(nn.Module):
 
 # Use with extracted features
 featurizer = ProteinFeaturizer("protein.pdb")
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 
 model = AtomLevelModel()
 atom_features = model(
@@ -226,7 +236,7 @@ all_atom_features = []
 
 for pdb_file in pdb_files:
     featurizer = ProteinFeaturizer(pdb_file)
-    features = featurizer.get_atom_features_with_sasa()
+    features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
     all_atom_features.append(features)
 
 # Statistics
@@ -241,7 +251,7 @@ print(f"Average SASA per atom: {avg_sasa:.2f} Ų")
 
 ### By Element Type
 ```python
-features = featurizer.get_atom_features_with_sasa()
+features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
 elements = features['atom_element']
 
 # Select only carbon atoms

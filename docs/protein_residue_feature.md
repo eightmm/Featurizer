@@ -5,7 +5,15 @@ Comprehensive residue-level feature extraction for protein structure analysis an
 
 ## Feature Extraction Methods
 
-### 1. Standard Features (`get_features()`)
+### Method Naming Convention
+All residue-level methods have clear aliases for better clarity:
+- Original: `get_sequence_features()` → Aliases: `get_residue_sequence()`, `get_residue_types()`
+- Original: `get_geometric_features()` → Aliases: `get_residue_geometry()`, `get_residue_dihedrals()`
+- Original: `get_sasa_features()` → Aliases: `get_residue_sasa()`, `get_residue_level_sasa()`
+- Original: `get_contact_map()` → Aliases: `get_residue_contacts()`, `get_residue_contact_map()`
+- Original: `get_features()` → Aliases: `get_residue_features()`, `get_residue_level_features()`
+
+### 1. Standard Features (`get_features()` / `get_residue_features()`)
 
 Returns node and edge features in standard format for graph neural networks.
 
@@ -209,13 +217,15 @@ from featurizer import ProteinFeaturizer
 # Initialize with PDB file
 featurizer = ProteinFeaturizer("protein.pdb")
 
-# Get standard format
-node, edge = featurizer.get_features()
+# Get standard format (multiple aliases available)
+node, edge = featurizer.get_features()  # Original
+node, edge = featurizer.get_residue_features()  # Clearer
+node, edge = featurizer.get_residue_level_features()  # Most explicit
 
-# Extract specific features
-sequence = featurizer.get_sequence_features()
-geometry = featurizer.get_geometric_features()
-sasa = featurizer.get_sasa_features()
+# Extract specific features (with clearer aliases)
+sequence = featurizer.get_residue_sequence()  # or get_sequence_features()
+geometry = featurizer.get_residue_geometry()  # or get_geometric_features()
+sasa = featurizer.get_residue_sasa()  # or get_sasa_features()
 ```
 
 ### Graph Neural Network Integration
@@ -258,7 +268,7 @@ data = Data(
 featurizer = ProteinFeaturizer("protein.pdb")
 
 for cutoff in [4.5, 8.0, 12.0]:
-    contacts = featurizer.get_contact_map(cutoff=cutoff)
+    contacts = featurizer.get_residue_contacts(cutoff=cutoff)  # or get_contact_map()
     adjacency = contacts['adjacency_matrix']
     num_contacts = adjacency.sum(dim=1)
 
