@@ -11,8 +11,8 @@ Returns basic sequence information and encoding:
 
 ```python
 {
-    'residue_types': torch.Tensor,     # Shape: [n_residues] - Integer encoding (0-20)
-    'residue_one_hot': torch.Tensor,   # Shape: [n_residues, 21] - One-hot vectors
+    'residue_types': torch.Tensor,     # Integer encoding (0-20)
+    'residue_one_hot': torch.Tensor,   # One-hot vectors
     'num_residues': int                 # Total number of residues
 }
 ```
@@ -27,13 +27,13 @@ Extracts 3D structural features:
 
 ```python
 {
-    'dihedrals': torch.Tensor,         # Shape: [n_residues, 4] - Phi, psi, omega, chi1
-    'has_chi_angles': torch.Tensor,    # Shape: [n_residues, 4] - Boolean flags
-    'backbone_curvature': torch.Tensor,# Shape: [n_residues] - Local curvature
-    'backbone_torsion': torch.Tensor,  # Shape: [n_residues] - Local torsion
-    'self_distances': torch.Tensor,    # Shape: [n_residues, 10] - Intra-residue distances
-    'self_vectors': torch.Tensor,      # Shape: [n_residues, 30] - Direction vectors
-    'coordinates': torch.Tensor        # Shape: [n_residues, 15, 3] - 3D coordinates
+    'dihedrals': torch.Tensor,         # Phi, psi, omega, chi angles
+    'has_chi_angles': torch.Tensor,    # Boolean flags for chi angles
+    'backbone_curvature': torch.Tensor,# Local curvature
+    'backbone_torsion': torch.Tensor,  # Local torsion
+    'self_distances': torch.Tensor,    # Intra-residue distances
+    'self_vectors': torch.Tensor,      # Direction vectors
+    'coordinates': torch.Tensor        # 3D coordinates
 }
 ```
 
@@ -46,9 +46,7 @@ Extracts 3D structural features:
 
 Solvent Accessible Surface Area analysis:
 
-```python
-torch.Tensor  # Shape: [n_residues, 10]
-```
+Returns a tensor containing SASA values for each residue.
 
 **10 SASA components per residue:**
 1. Total SASA
@@ -68,10 +66,10 @@ Residue-residue interaction analysis with customizable distance threshold:
 
 ```python
 {
-    'adjacency_matrix': torch.Tensor,  # Shape: [n_res, n_res] - Binary contacts
-    'distance_matrix': torch.Tensor,   # Shape: [n_res, n_res] - Distances (Å)
+    'adjacency_matrix': torch.Tensor,  # Binary contacts
+    'distance_matrix': torch.Tensor,   # Distances in Ångströms
     'edges': tuple,                    # (src_indices, dst_indices)
-    'distances': torch.Tensor,         # Shape: [n_edges] - Edge distances
+    'distances': torch.Tensor,         # Edge distances
     'cutoff': float                    # Distance threshold used
 }
 ```
@@ -91,9 +89,7 @@ Residue-residue interaction analysis with customizable distance threshold:
 
 Encodes spatial relationships between residue pairs:
 
-```python
-torch.Tensor  # Shape: [n_residues, n_residues, 32]
-```
+Returns a tensor encoding spatial relationships between residue pairs.
 
 Uses sinusoidal encoding of sequence separation and spatial distance.
 
@@ -101,11 +97,7 @@ Uses sinusoidal encoding of sequence separation and spatial distance.
 
 Identifies chain termini:
 
-```python
-torch.Tensor  # Shape: [n_residues, 2]
-```
-- Column 0: N-terminal flag
-- Column 1: C-terminal flag
+Returns a tensor with N-terminal and C-terminal flags for each residue.
 
 ### 7. Node Features (`get_node_features()`)
 
@@ -128,9 +120,9 @@ Inter-residue interaction features for edges within cutoff:
 ```python
 {
     'edges': tuple,                    # (src, dst) indices
-    'distance': torch.Tensor,          # Shape: [n_edges] - Distances
-    'relative_position': torch.Tensor, # Shape: [n_edges, 32] - Position encoding
-    'vectors': torch.Tensor            # Shape: [n_edges, 3] - Unit vectors
+    'distance': torch.Tensor,          # Distances
+    'relative_position': torch.Tensor, # Position encoding
+    'vectors': torch.Tensor            # Unit vectors
 }
 ```
 
