@@ -1,12 +1,17 @@
 # Feature Types Overview
 
-The Featurizer package provides comprehensive feature extraction for both molecules and proteins. This document provides a high-level overview of available features.
+The Featurizer package provides comprehensive feature extraction for both molecules and proteins. This document provides a high-level overview with links to detailed documentation.
 
-## 📚 Detailed Documentation
+## 📚 Documentation Structure
 
-- **[Molecule Features](molecule_features.md)** - Complete guide for molecular feature extraction
-- **[Protein Features](protein_features.md)** - Complete guide for protein feature extraction
-- **[Molecular Descriptors](molecular_descriptors.md)** - Detailed reference for 40 molecular descriptors
+### 🧪 Molecule Features
+- **[Molecular Descriptors & Fingerprints](molecule_feature.md)** - 40 descriptors and 9 fingerprint types
+- **[Molecule Graph Representations](molecule_graph.md)** - Graph features for GNNs
+- **[Molecular Descriptors Reference](molecular_descriptors.md)** - Detailed descriptor documentation
+
+### 🧬 Protein Features
+- **[Residue-Level Features](protein_residue_feature.md)** - Comprehensive residue-based analysis
+- **[Atom-Level Features](protein_atom_feature.md)** - 175 token types with atomic SASA
 
 ## 🧪 Molecule Features Summary
 
@@ -20,16 +25,28 @@ The Featurizer package provides comprehensive feature extraction for both molecu
 from featurizer import MoleculeFeaturizer
 
 featurizer = MoleculeFeaturizer()
-features = featurizer.get_feature("CCO")  # All features
-node, edge = featurizer.get_graph("CCO")  # Graph representation
+
+# Descriptors and fingerprints
+features = featurizer.get_feature("CCO")
+
+# Graph representation
+node, edge = featurizer.get_graph("CCO")
 ```
 
-➡️ See [Molecule Features Documentation](molecule_features.md) for complete details
+**Learn More:**
+- ➡️ [Descriptors & Fingerprints](molecule_feature.md) - Complete molecular features
+- ➡️ [Graph Features](molecule_graph.md) - GNN-ready representations
 
 ## 🧬 Protein Features Summary
 
 ### Available Features
-- **Atom-Level Features**: 175 token types with atomic SASA
+
+#### Atom-Level
+- **175 Token Types**: Unique residue-atom combinations
+- **Atomic SASA**: Solvent accessible surface area per atom
+- **3D Coordinates**: Precise atomic positions
+
+#### Residue-Level
 - **Sequence Features**: Residue types and one-hot encoding
 - **Geometric Features**: Dihedrals, curvature, torsion, distances
 - **SASA Features**: 10-component solvent accessibility analysis
@@ -41,12 +58,18 @@ node, edge = featurizer.get_graph("CCO")  # Graph representation
 from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
-features = featurizer.get_all_features()  # All features
-atom_features = featurizer.get_atom_features_with_sasa()  # Atom-level
-contacts = featurizer.get_contact_map(cutoff=8.0)  # Contact map
+
+# Atom-level features
+atom_features = featurizer.get_atom_features_with_sasa()
+
+# Residue-level features
+node, edge = featurizer.get_features()
+contacts = featurizer.get_contact_map(cutoff=8.0)
 ```
 
-➡️ See [Protein Features Documentation](protein_features.md) for complete details
+**Learn More:**
+- ➡️ [Residue Features](protein_residue_feature.md) - Residue-level analysis
+- ➡️ [Atom Features](protein_atom_feature.md) - Atomic-level tokenization
 
 ## 🔧 Common Use Cases
 
@@ -54,16 +77,19 @@ contacts = featurizer.get_contact_map(cutoff=8.0)  # Contact map
 - Molecular descriptors for ADMET prediction
 - Morgan fingerprints for similarity searching
 - Protein-ligand interaction features
+- Binding site identification with atomic SASA
 
 ### Structural Biology
 - Protein contact maps for fold recognition
-- SASA for binding site identification
+- Atomic SASA for binding site identification
 - Geometric features for structure validation
+- Atom-level analysis for quality assessment
 
 ### Machine Learning
-- Graph features for GNNs
+- Graph features for GNNs (molecules and proteins)
 - Descriptors for traditional ML (RF, XGBoost)
 - Fingerprints for clustering and classification
+- Atom tokens for transformer models
 
 ## 🚀 Quick Start Guide
 
@@ -78,11 +104,15 @@ pip install git+https://github.com/eightmm/Featurizer.git
 from featurizer import MoleculeFeaturizer
 mol_feat = MoleculeFeaturizer()
 mol_features = mol_feat.get_feature("c1ccccc1")
+mol_graph = mol_feat.get_graph("c1ccccc1")
 
-# Proteins
+# Proteins (Residue-level)
 from featurizer import ProteinFeaturizer
 prot_feat = ProteinFeaturizer("structure.pdb")
-prot_features = prot_feat.get_all_features()
+node, edge = prot_feat.get_features()
+
+# Proteins (Atom-level)
+atom_features = prot_feat.get_atom_features_with_sasa()
 ```
 
 ## 📊 Performance Guidelines
@@ -93,12 +123,23 @@ prot_features = prot_feat.get_all_features()
 - **Graph features**: ~10ms per molecule
 
 ### Proteins
-- **Small (<100 residues)**: ~100ms total
+- **Atom tokenization**: ~10-50ms
+- **Atomic SASA**: ~100-300ms
+- **Residue features**: ~100-500ms total
+- **Small (<100 residues)**: ~100ms
 - **Medium (100-500 residues)**: ~200-300ms
 - **Large (>500 residues)**: ~500ms+
 
-## 📖 Further Reading
+## 📖 Complete Documentation
 
+### Detailed Guides
+- **[Molecular Descriptors & Fingerprints](molecule_feature.md)**
+- **[Molecule Graph Representations](molecule_graph.md)**
+- **[Molecular Descriptors Reference](molecular_descriptors.md)**
+- **[Protein Residue Features](protein_residue_feature.md)**
+- **[Protein Atom Features](protein_atom_feature.md)**
+
+### Additional Resources
 - [API Reference](../README.md)
 - [Examples](../examples/)
 - [GitHub Repository](https://github.com/eightmm/Featurizer)
