@@ -66,7 +66,7 @@ features = featurizer.get_feature(mol)
 features = featurizer.get_feature("CC(=O)Oc1ccccc1C(=O)O")
 
 # Get graph representation for GNNs
-graph = featurizer.get_graph(mol)  # Returns node and edge features
+node, edge = featurizer.get_graph(mol)  # Returns (node, edge) tuple
 ```
 
 ### Protein Features
@@ -110,19 +110,21 @@ edge_features = features['edge']  # Residue-residue interactions
 - **Structural (3)**: Ring systems, max ring size, average ring size
 
 #### `get_graph()` Returns:
+Returns a tuple of (node, edge) dictionaries:
+
 ```python
-{
-    'node': {
-        'features': torch.Tensor,    # Shape: [n_atoms, 122] - Atom features
-        'coords': torch.Tensor,       # Shape: [n_atoms, 3] - 3D coordinates
-        'num_nodes': int              # Number of atoms
-    },
-    'edge': {
-        'src': torch.Tensor,          # Source atom indices
-        'dst': torch.Tensor,          # Destination atom indices
-        'features': torch.Tensor,     # Shape: [n_edges, 44] - Bond features
-        'num_edges': int              # Number of bonds
-    }
+node, edge = featurizer.get_graph(mol)
+
+# Node dictionary contains:
+node = {
+    'coords': torch.Tensor,      # Shape: [n_atoms, 3] - 3D coordinates
+    'node_feats': torch.Tensor    # Shape: [n_atoms, 122] - Atom features
+}
+
+# Edge dictionary contains:
+edge = {
+    'edges': torch.Tensor,        # Shape: [2, n_edges] - Source/destination indices
+    'edge_feats': torch.Tensor    # Shape: [n_edges, 44] - Bond features
 }
 ```
 
@@ -177,8 +179,8 @@ AllChem.UFFOptimizeMolecule(mol)  # Optimize geometry
 
 # Featurizer preserves 3D coordinates
 featurizer = MoleculeFeaturizer()
-graph = featurizer.get_graph(mol, add_hs=True)  # Adds H with proper 3D coords
-coords = graph['node']['coords']  # 3D coordinates preserved
+node, edge = featurizer.get_graph(mol, add_hs=True)  # Adds H with proper 3D coords
+coords = node['coords']  # 3D coordinates preserved
 ```
 
 ### Custom Feature Extraction
@@ -224,17 +226,18 @@ import dgl
 import torch.nn as nn
 
 # Get molecular graph
-mol_graph = featurizer.get_graph(mol)
+node, edge = featurizer.get_graph(mol)
 
 # Create DGL graph for GNN
-src = mol_graph['edge']['src']
-dst = mol_graph['edge']['dst']
+# Extract source and destination indices from edges tensor
+src = edge['edges'][0]  # First row contains source indices
+dst = edge['edges'][1]  # Second row contains destination indices
 g = dgl.graph((src, dst))
 
 # Add features to graph
-g.ndata['feat'] = mol_graph['node']['features']
-g.ndata['coords'] = mol_graph['node']['coords']
-g.edata['feat'] = mol_graph['edge']['features']
+g.ndata['feat'] = node['node_feats']
+g.ndata['coords'] = node['coords']
+g.edata['feat'] = edge['edge_feats']
 
 # Use with your GNN model
 # model = YourGNNModel(in_dim=122, hidden_dim=128, out_dim=1)

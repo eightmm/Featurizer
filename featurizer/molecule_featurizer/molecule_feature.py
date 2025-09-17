@@ -604,7 +604,7 @@ class MoleculeFeaturizer:
 
         return adj + adj.transpose(0, 1)
 
-    def get_graph(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True) -> Dict:
+    def get_graph(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True) -> Tuple[Dict, Dict]:
         """
         Create molecular graph with node and edge features from molecule.
 
@@ -613,8 +613,9 @@ class MoleculeFeaturizer:
             add_hs: Whether to add hydrogens
 
         Returns:
-            Dictionary with 'node' and 'edge' keys containing feature tensors,
-            similar to protein featurizer format
+            Tuple of (node, edge) dictionaries where:
+            - node: {'coords': coordinates, 'node_feats': node features}
+            - edge: {'edges': [src, dst] indices, 'edge_feats': edge features}
         """
         mol = self._prepare_mol(mol_or_smiles, add_hs)
 
@@ -624,18 +625,14 @@ class MoleculeFeaturizer:
         src, dst = torch.where(bond_features.sum(dim=-1) > 0)
         edge_features = bond_features[src, dst]
 
-        result = {
-            'node': {
-                'features': node_features,
-                'coords': coords,
-                'num_nodes': mol.GetNumAtoms()
-            },
-            'edge': {
-                'src': src,
-                'dst': dst,
-                'features': edge_features,
-                'num_edges': len(src)
-            }
+        node = {
+            'coords': coords,
+            'node_feats': node_features
         }
 
-        return result
+        edge = {
+            'edges': torch.stack([src, dst], dim=0),  # Shape: [2, num_edges]
+            'edge_feats': edge_features
+        }
+
+        return node, edge
