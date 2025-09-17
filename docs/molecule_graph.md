@@ -122,27 +122,6 @@ edge['edges']  # [2, n_edges]
 # Undirected: both (i→j) and (j→i) are included
 ```
 
-### Integration with DGL
-```python
-import dgl
-import torch
-
-featurizer = MoleculeFeaturizer("c1ccccc1")
-node, edge = featurizer.get_graph()
-
-# Create DGL graph
-src, dst = edge['edges']
-g = dgl.graph((src, dst))
-
-# Add features
-g.ndata['feat'] = node['node_feats']
-g.edata['feat'] = edge['edge_feats']
-g.ndata['coords'] = node['coords']
-
-# Use in GNN
-print(f"Nodes: {g.num_nodes()}, Edges: {g.num_edges()}")
-```
-
 ### Integration with PyTorch Geometric
 ```python
 from torch_geometric.data import Data
@@ -174,17 +153,19 @@ for smi in smiles_list:
     node, edge = featurizer.get_graph()
     graphs.append((node, edge))
 
-# Collate for batching (example with DGL)
-import dgl
+# Collate for batching (example with PyTorch Geometric)
+from torch_geometric.data import Data, Batch
 
-dgl_graphs = []
+data_list = []
 for node, edge in graphs:
-    g = dgl.graph((edge['edges'][0], edge['edges'][1]))
-    g.ndata['feat'] = node['node_feats']
-    g.edata['feat'] = edge['edge_feats']
-    dgl_graphs.append(g)
+    data = Data(
+        x=node['node_feats'],
+        edge_index=edge['edges'],
+        edge_attr=edge['edge_feats']
+    )
+    data_list.append(data)
 
-batched_graph = dgl.batch(dgl_graphs)
+batched_data = Batch.from_data_list(data_list)
 ```
 
 ## Feature Normalization

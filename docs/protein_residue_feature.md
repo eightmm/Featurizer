@@ -234,24 +234,6 @@ sasa = featurizer.get_residue_sasa()  # or get_sasa_features()
 
 ### Graph Neural Network Integration
 
-#### DGL Integration
-```python
-import dgl
-
-node, edge = featurizer.get_features()
-
-# Create graph
-src, dst = edge['edges']
-g = dgl.graph((src, dst))
-
-# Add features
-g.ndata['coord'] = node['coord']
-g.ndata['scalar_feat'] = node['node_scalar_features']
-g.ndata['vector_feat'] = node['node_vector_features']
-g.edata['scalar_feat'] = edge['edge_scalar_features']
-g.edata['vector_feat'] = edge['edge_vector_features']
-```
-
 #### PyTorch Geometric Integration
 ```python
 from torch_geometric.data import Data
