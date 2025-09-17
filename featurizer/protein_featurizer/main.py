@@ -15,8 +15,8 @@ from typing import Optional
 
 import torch
 
-from pdb_standardizer import PDBStandardizer
-from residue_featurizer import ResidueFeaturizer
+from .pdb_standardizer import PDBStandardizer
+from .residue_featurizer import ResidueFeaturizer
 
 
 def process_pdb(input_pdb: str,

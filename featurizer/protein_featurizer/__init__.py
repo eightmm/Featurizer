@@ -4,9 +4,11 @@ Protein Featurizer Module
 A comprehensive toolkit for extracting structural features from protein PDB files.
 """
 
+import torch
 from .pdb_standardizer import PDBStandardizer, standardize_pdb
 from .residue_featurizer import ResidueFeaturizer
 from .main import process_pdb, batch_process
+from .protein_featurizer import ProteinFeaturizer as EfficientProteinFeaturizer
 
 __version__ = "0.2.0"
 __author__ = "Jaemin Sim"
@@ -21,7 +23,11 @@ __all__ = [
 ]
 
 
-class ProteinFeaturizer:
+# Use the efficient implementation
+ProteinFeaturizer = EfficientProteinFeaturizer
+
+
+class ProteinFeaturizerOld:
     """
     High-level API for protein feature extraction.
 

@@ -55,18 +55,20 @@ pip install dgl
 from featurizer.molecule_featurizer import MoleculeFeaturizer
 from rdkit import Chem
 
-# Initialize featurizer
+# Method 1: Instance mode (efficient for multiple features from same molecule)
+featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")  # Parse once
+features = featurizer.get_feature()  # Uses cached molecule
+graph = featurizer.get_graph()  # Uses cached molecule
+fingerprints = featurizer.get_fingerprints()  # Uses cached molecule
+
+# Method 2: Static mode (backward compatible, good for one-off extraction)
 featurizer = MoleculeFeaturizer()
-
-# Method 1: From RDKit mol object (recommended for 3D structures)
-mol = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")  # Aspirin
-features = featurizer.get_feature(mol)
-
-# Method 2: From SMILES string
 features = featurizer.get_feature("CC(=O)Oc1ccccc1C(=O)O")
 
-# Get graph representation for GNNs
-node, edge = featurizer.get_graph(mol)  # Returns (node, edge) tuple
+# Method 3: From RDKit mol object (recommended for 3D structures)
+mol = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")
+featurizer = MoleculeFeaturizer(mol)
+node, edge = featurizer.get_graph()  # Returns (node, edge) tuple with 3D coords
 ```
 
 ### Protein Features
@@ -74,19 +76,21 @@ node, edge = featurizer.get_graph(mol)  # Returns (node, edge) tuple
 ```python
 from featurizer.protein_featurizer import ProteinFeaturizer
 
-# Initialize featurizer
-featurizer = ProteinFeaturizer()
+# Method 1: Instance mode (efficient - parse PDB once, extract multiple features)
+featurizer = ProteinFeaturizer("protein.pdb")  # Parse once
+sequence = featurizer.get_sequence_features()  # Uses cached structure
+geometry = featurizer.get_geometric_features()  # Uses cached structure
+sasa = featurizer.get_sasa_features()  # Uses cached structure
+contacts = featurizer.get_contact_map(cutoff=8.0)  # Uses cached structure
 
-# Method 1: Extract all features at once
-features = featurizer.extract("protein.pdb")
+# Method 2: Get all features at once
+features = featurizer.get_all_features()
 node_features = features['node']  # Per-residue features
 edge_features = features['edge']  # Residue-residue interactions
 
-# Method 2: Extract specific feature types
-sequence = featurizer.get_sequence_features("protein.pdb")
-geometry = featurizer.get_geometric_features("protein.pdb")
-sasa = featurizer.get_sasa_features("protein.pdb")
-contacts = featurizer.get_contact_map("protein.pdb", cutoff=8.0)
+# Method 3: Without PDB standardization (for pre-cleaned PDBs)
+featurizer = ProteinFeaturizer("clean.pdb", standardize=False)
+features = featurizer.get_all_features()
 ```
 
 ## 📊 Feature Details

@@ -17,7 +17,12 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import freesasa as fs
+try:
+    import freesasa as fs
+    FREESASA_AVAILABLE = True
+except ImportError:
+    FREESASA_AVAILABLE = False
+    fs = None
 
 
 # Amino acid mappings
@@ -217,6 +222,11 @@ class ResidueFeaturizer:
         Returns:
             SASA features tensor
         """
+        if not FREESASA_AVAILABLE:
+            warnings.warn("FreeSASA not available. Returning zeros for SASA features.")
+            num_residues = len(self.get_residues())
+            return torch.zeros(num_residues, 10)
+
         with suppress_freesasa_warnings():
             sasas = [
                 [
