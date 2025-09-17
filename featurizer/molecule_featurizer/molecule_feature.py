@@ -18,38 +18,7 @@ class MoleculeFeaturizer:
     and graph-level features (node and edge features) from RDKit mol objects or SMILES strings.
     """
 
-    CYP3A4_INHIBITOR_SMARTS = {
-        "imidazole": "c1ncn[c,n]1",
-        "triazole": "c1nn[c,n]n1",
-        "azole_general": "[n;r5;a]c[n;r5;a]",
-        "pyridine": "[n;r6;a]",
-        "furan": "o1cccc1",
-        "tertiary_amine": "[NX3;!$(N=O);!$(N-C=O)]([CH3])([CH3])",
-        "terminal_acetylene": "[C]#[CH1]",
-        "quinoline": "c1cccc2ncccc12",
-        "benzimidazole": "c1nc2ccccc2[nH]1",
-        "macrolide_amine": "[NX3]([CH3])([CH3])[CH2]",
-    }
-
-    CYP3A4_SUBSTRATE_SMARTS = {
-        "n_dealkylation": "[NX3,NX4+;!$(N-C=O)]([CH3,CH2CH3])",
-        "o_dealkylation_aromatic": "[O;X2;!$(O-C=O)]([CH3,CH2CH3])c",
-        "o_dealkylation_aliphatic": "[O;X2;!$(O-C=O)]([CH3,CH2CH3])C",
-        "aromatic_hydroxylation": "[c;H1]",
-        "benzylic_hydroxylation": "[C;H2,H3][c]",
-        "allylic_hydroxylation": "[C;H2,H3][C]=[C]",
-        "aliphatic_hydroxylation": "[C;H2,H3][C;H2][C;H2]",
-        "epoxidation": "[C]=[C]",
-        "s_oxidation": "[SX2]",
-        "n_oxidation": "[NX3;!$(N=O);!$(N-[S,P]=O)]",
-        "deamination": "[C][CH2][NH2]",
-        "ester_hydrolysis": "[O][C](=O)[C]",
-        "amide_hydrolysis": "[N][C](=O)[C]",
-        "cyp3a4_hotspot": "[c]1[c][c][c]([O,N,S])[c][c]1",
-        "steroid_scaffold": "[C][C][C][C]1[C][C][C]2[C][C][C][C][C]12",
-    }
-
-    ATOMS = ['C', 'N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I', 'UNK']
+    ATOMS = ['H', 'C', 'N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I', 'UNK']
     PERIODS = list(range(5))
     GROUPS = list(range(18))
     DEGREES = list(range(7))
@@ -94,22 +63,6 @@ class MoleculeFeaturizer:
         "hydrophobic": "[C,c,S&H0&v2,F,Cl,Br,I&!$(C=[O,N,P,S])&!$(C#N);!$(C=O)]"
     }
 
-    INHIBITOR_WEIGHTS = {
-        "imidazole": 1.0, "triazole": 1.0, "azole_general": 0.8,
-        "tertiary_amine": 0.6, "furan": 0.7, "terminal_acetylene": 0.9,
-        "benzimidazole": 0.8, "ritonavir_motif": 1.0, "grapefruit_furanocoumarins": 0.9,
-        "calcium_channel_blocker": 0.6, "macrolide_lactone": 0.7, "hiv_protease_inhibitor": 0.8,
-        "quinoline_antimalarial": 0.5
-    }
-
-    SUBSTRATE_WEIGHTS = {
-        "n_dealkylation": 1.0, "o_dealkylation_aromatic": 0.9, "o_dealkylation_aliphatic": 0.8,
-        "benzylic_hydroxylation": 0.9, "allylic_hydroxylation": 0.8, "aliphatic_hydroxylation": 0.5,
-        "epoxidation_aliphatic": 0.4, "s_oxidation": 0.8, "n_oxidation": 0.7,
-        "aromatic_para_hydroxylation": 0.3, "tertiary_carbon_hydroxylation": 0.8,
-        "steroid_6beta_hydroxylation": 0.9, "steroid_alpha_methyl": 0.8,
-        "cyp3a4_preferred_size": 0.4, "lipophilic_aromatic": 0.3, "calcium_channel_substrate": 0.6
-    }
 
     def __init__(self):
         self.rotate_smarts = "[!$(*#*)&!D1]-!@[!$(*#*)&!D1]"
@@ -196,46 +149,6 @@ class MoleculeFeaturizer:
 
         return features
 
-    def get_cyp3a4_features(self, mol):
-        """Extract CYP3A4-related features from molecule."""
-        features = {}
-
-        inhibitor_matches = 0
-        for smarts in self.CYP3A4_INHIBITOR_SMARTS.values():
-            try:
-                pattern = Chem.MolFromSmarts(smarts)
-                if pattern:
-                    matches = mol.GetSubstructMatches(pattern)
-                    inhibitor_matches += len(matches)
-            except:
-                continue
-
-        substrate_matches = 0
-        for smarts in self.CYP3A4_SUBSTRATE_SMARTS.values():
-            try:
-                pattern = Chem.MolFromSmarts(smarts)
-                if pattern:
-                    matches = mol.GetSubstructMatches(pattern)
-                    substrate_matches += len(matches)
-            except:
-                continue
-
-        features['inhibitor_pattern_count'] = min(inhibitor_matches / 10.0, 1.0)
-        features['substrate_pattern_count'] = min(substrate_matches / 15.0, 1.0)
-        features['inhibitor_ratio'] = inhibitor_matches / (inhibitor_matches + substrate_matches + 1)
-
-        n_nitrogen = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() == 7)
-        n_oxygen = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() == 8)
-        n_sulfur = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() == 16)
-        n_halogens = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() in [9, 17, 35, 53])
-
-        total_atoms = mol.GetNumAtoms()
-        features['nitrogen_ratio'] = n_nitrogen / total_atoms
-        features['oxygen_ratio'] = n_oxygen / total_atoms
-        features['sulfur_ratio'] = n_sulfur / total_atoms
-        features['halogen_ratio'] = n_halogens / total_atoms
-
-        return features
 
     def get_structural_features(self, mol):
         """Extract structural features from molecule."""
@@ -331,7 +244,6 @@ class MoleculeFeaturizer:
 
         physicochemical_features = self.get_physicochemical_features(mol)
         druglike_features = self.get_druglike_features(mol)
-        cyp3a4_features = self.get_cyp3a4_features(mol)
         structural_features = self.get_structural_features(mol)
 
         all_descriptors = []
@@ -350,13 +262,6 @@ class MoleculeFeaturizer:
         ]
         for key in druglike_keys:
             all_descriptors.append(float(druglike_features[key]))
-
-        cyp3a4_keys = [
-            'inhibitor_pattern_count', 'substrate_pattern_count', 'inhibitor_ratio',
-            'nitrogen_ratio', 'oxygen_ratio', 'sulfur_ratio', 'halogen_ratio'
-        ]
-        for key in cyp3a4_keys:
-            all_descriptors.append(float(cyp3a4_features[key]))
 
         structural_keys = ['n_ring_systems', 'max_ring_size', 'avg_ring_size']
         for key in structural_keys:
@@ -443,37 +348,6 @@ class MoleculeFeaturizer:
 
         return degree_info
 
-    def get_cyp3a4_features_for_graph(self, mol):
-        """Get CYP3A4 features for graph nodes."""
-        num_atoms = mol.GetNumAtoms()
-
-        inhibitor_features = torch.zeros(num_atoms, len(self.CYP3A4_INHIBITOR_SMARTS))
-        for idx, (name, smarts) in enumerate(self.CYP3A4_INHIBITOR_SMARTS.items()):
-            try:
-                pattern = Chem.MolFromSmarts(smarts)
-                if pattern:
-                    matches = mol.GetSubstructMatches(pattern)
-                    weight = self.INHIBITOR_WEIGHTS.get(name, 0.5)
-                    for match in matches:
-                        for atom_idx in match:
-                            inhibitor_features[atom_idx, idx] = weight
-            except:
-                continue
-
-        substrate_features = torch.zeros(num_atoms, len(self.CYP3A4_SUBSTRATE_SMARTS))
-        for idx, (name, smarts) in enumerate(self.CYP3A4_SUBSTRATE_SMARTS.items()):
-            try:
-                pattern = Chem.MolFromSmarts(smarts)
-                if pattern:
-                    matches = mol.GetSubstructMatches(pattern)
-                    weight = self.SUBSTRATE_WEIGHTS.get(name, 0.5)
-                    for match in matches:
-                        for atom_idx in match:
-                            substrate_features[atom_idx, idx] = weight
-            except:
-                continue
-
-        return inhibitor_features, substrate_features
 
     def get_stereochemistry_features(self, mol):
         """Get stereochemistry features for atoms."""
@@ -561,50 +435,6 @@ class MoleculeFeaturizer:
 
         return ext_features
 
-    def get_cyp3a4_binding_features(self, mol):
-        """Get CYP3A4 binding site features."""
-        num_atoms = mol.GetNumAtoms()
-        binding_features = torch.zeros(num_atoms, 8)
-
-        mol_weight = rdMolDescriptors.CalcExactMolWt(mol)
-        tpsa = rdMolDescriptors.CalcTPSA(mol)
-
-        for atom in mol.GetAtoms():
-            atom_idx = atom.GetIdx()
-
-            if 300 <= mol_weight <= 800:
-                binding_features[atom_idx, 0] = 1.0 - abs(mol_weight - 550) / 250
-
-            if 60 <= tpsa <= 140:
-                binding_features[atom_idx, 1] = 1.0 - abs(tpsa - 100) / 40
-
-            if atom.GetSymbol() in ['C'] and not atom.GetIsAromatic():
-                binding_features[atom_idx, 2] = 1.0
-            elif atom.GetSymbol() in ['C'] and atom.GetIsAromatic():
-                binding_features[atom_idx, 2] = 0.8
-
-            if atom.GetIsAromatic():
-                binding_features[atom_idx, 3] = 1.0
-
-            if atom.GetSymbol() in ['N', 'O'] and atom.GetTotalNumHs() > 0:
-                binding_features[atom_idx, 4] = 0.8
-            elif atom.GetSymbol() in ['N', 'O'] and len(atom.GetNeighbors()) < 3:
-                binding_features[atom_idx, 5] = 0.7
-
-            rotatable_neighbors = 0
-            for bond in atom.GetBonds():
-                if (bond.GetBondType() == Chem.rdchem.BondType.SINGLE and
-                    not bond.IsInRing() and
-                    bond.GetBeginAtom().GetAtomicNum() > 1 and
-                    bond.GetEndAtom().GetAtomicNum() > 1):
-                    rotatable_neighbors += 1
-            binding_features[atom_idx, 6] = min(rotatable_neighbors / 4.0, 1.0)
-
-            if (atom.GetSymbol() == 'C' and
-                len([n for n in atom.GetNeighbors() if n.GetAtomicNum() > 1]) >= 2):
-                binding_features[atom_idx, 7] = 0.6
-
-        return binding_features
 
     def get_ring_features(self, sizes, is_aromatic):
         """Get ring-related features."""
@@ -658,12 +488,10 @@ class MoleculeFeaturizer:
         """Get comprehensive atom features including 3D coordinates if available."""
         atom_rings, _ = self.get_ring_mappings(mol)
         degree_info = self.get_degree_features(mol)
-        inhibitor_feat, substrate_feat = self.get_cyp3a4_features_for_graph(mol)
 
         stereo_feat = self.get_stereochemistry_features(mol)
         charge_feat = self.get_partial_charges(mol)
         ext_neighbor_feat = self.get_extended_neighborhood(mol)
-        binding_feat = self.get_cyp3a4_binding_features(mol)
 
         features = []
         for atom in mol.GetAtoms():
@@ -710,8 +538,8 @@ class MoleculeFeaturizer:
                 basic_smarts_feat[list(sum(matches, ())), idx] = 1
 
         atom_feat = torch.tensor(features, dtype=torch.float32)
-        node_features = torch.cat([atom_feat, basic_smarts_feat, inhibitor_feat, substrate_feat,
-                                   stereo_feat, charge_feat, ext_neighbor_feat, binding_feat], dim=-1)
+        node_features = torch.cat([atom_feat, basic_smarts_feat,
+                                   stereo_feat, charge_feat, ext_neighbor_feat], dim=-1)
 
         coords = self.get_3d_coordinates(mol)
 
