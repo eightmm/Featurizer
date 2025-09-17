@@ -78,10 +78,15 @@
   - Backbone/sidechain SASA
   - Relative SASA values
 
-### Contact Features (`get_contact_map()`)
+### Contact Features (`get_contact_map(cutoff)`)
+- **Customizable Distance Threshold**: Any distance cutoff in Ångströms (default: 8.0)
 - **Contact Matrix**: Binary contact map at specified cutoff
-- **Distance Matrix**: CA-CA distances between residues
+- **Distance Matrix**: CA-CA, SC-SC, CA-SC, SC-CA distances between residues
 - **Edge Indices**: Residue pairs within distance cutoff
+- **Common thresholds**:
+  - 4.5 Å: Very close contacts (e.g., hydrogen bonds, salt bridges)
+  - 8.0 Å: Standard contacts (typical protein interactions)
+  - 12.0 Å: Extended interactions (long-range effects)
 
 ### Node Features (`get_node_features()`)
 Combines all per-residue features:

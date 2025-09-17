@@ -51,7 +51,7 @@ featurizer = ProteinFeaturizer("protein.pdb")
 
 features = featurizer.get_all_features()
 sasa = featurizer.get_sasa_features()
-contacts = featurizer.get_contact_map(8.0)
+contacts = featurizer.get_contact_map(cutoff=8.0)  # Customizable distance threshold (Å)
 ```
 
 ## 📊 Feature Overview
@@ -67,6 +67,23 @@ contacts = featurizer.get_contact_map(8.0)
 - **Graph Representations**: Residue-residue interaction networks → [Details](docs/feature_types.md#protein-features)
 
 ## 🔧 Advanced Examples
+
+### Contact Maps with Different Thresholds
+```python
+from featurizer import ProteinFeaturizer
+
+featurizer = ProteinFeaturizer("protein.pdb")
+
+# Different thresholds for different analyses
+close_contacts = featurizer.get_contact_map(cutoff=4.5)   # Close contacts only
+standard_contacts = featurizer.get_contact_map(cutoff=8.0) # Standard threshold
+extended_contacts = featurizer.get_contact_map(cutoff=12.0) # Extended interactions
+
+# Access contact information
+edges = standard_contacts['edges']
+distances = standard_contacts['distances']
+adjacency = standard_contacts['adjacency_matrix']
+```
 
 ### Batch Processing
 ```python
