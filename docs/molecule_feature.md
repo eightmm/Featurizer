@@ -15,6 +15,10 @@ from featurizer import MoleculeFeaturizer
 featurizer = MoleculeFeaturizer("CCO")
 features = featurizer.get_feature()
 descriptors = features['descriptor']  # torch.Tensor [40]
+
+# Without hydrogens
+featurizer = MoleculeFeaturizer("CCO", hydrogen=False)
+features = featurizer.get_feature()  # Features without H atoms
 ```
 
 ### Descriptor Categories
@@ -172,24 +176,28 @@ features = featurizer.get_feature()
 
 ## Input Formats
 
-Accepts both RDKit mol objects and SMILES strings:
+Accepts both RDKit mol objects and SMILES strings with optional hydrogen control:
 
 ```python
 from rdkit import Chem
 
-# From SMILES
+# From SMILES (with hydrogens by default)
 featurizer = MoleculeFeaturizer("CCO")
+features = featurizer.get_feature()
+
+# From SMILES without hydrogens
+featurizer = MoleculeFeaturizer("CCO", hydrogen=False)
 features = featurizer.get_feature()
 
 # From RDKit mol
 mol = Chem.MolFromSmiles("CCO")
-featurizer = MoleculeFeaturizer(mol)
+featurizer = MoleculeFeaturizer(mol, hydrogen=True)
 features = featurizer.get_feature()
 
 # From SDF file
 suppl = Chem.SDMolSupplier('molecules.sdf')
 for mol in suppl:
-    featurizer = MoleculeFeaturizer(mol)
+    featurizer = MoleculeFeaturizer(mol, hydrogen=False)
     features = featurizer.get_feature()
 ```
 

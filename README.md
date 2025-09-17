@@ -37,6 +37,10 @@ custom_patterns = {
 featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
 node, edge = featurizer.get_graph()
 # node['node_feats'] now has 122 + 3 dimensions (base features + custom patterns)
+
+# Without hydrogens
+featurizer = MoleculeFeaturizer("c1ccncc1CCO", hydrogen=False)
+features = featurizer.get_feature()  # Features without H atoms
 ```
 
 ### Protein Features
@@ -78,8 +82,8 @@ custom_patterns = {
     'amine': '[NX3;H2,H1;!$(NC=O)]'
 }
 
-# Initialize with custom patterns
-featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
+# Initialize with custom patterns (and optionally control hydrogen addition)
+featurizer = MoleculeFeaturizer("c1ccncc1CCO", hydrogen=False, custom_smarts=custom_patterns)
 
 # Get graph with custom features automatically included
 node, edge = featurizer.get_graph()

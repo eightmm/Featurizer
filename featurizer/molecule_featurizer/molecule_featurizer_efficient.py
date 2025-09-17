@@ -35,14 +35,14 @@ class MoleculeFeaturizer:
         >>>     features = featurizer.get_feature()
     """
 
-    def __init__(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True,
+    def __init__(self, mol_or_smiles: Union[str, Chem.Mol], hydrogen: bool = True,
                  custom_smarts: Optional[Dict[str, str]] = None):
         """
         Initialize featurizer with a molecule.
 
         Args:
             mol_or_smiles: Molecule (RDKit mol or SMILES string)
-            add_hs: Whether to add hydrogens to molecules
+            hydrogen: Whether to add hydrogens to molecules (default: True)
             custom_smarts: Optional dictionary of custom SMARTS patterns
                           e.g., {'aromatic_nitrogen': 'n', 'carboxyl': 'C(=O)O'}
 
@@ -50,7 +50,7 @@ class MoleculeFeaturizer:
             ValueError: If molecule cannot be parsed
         """
         self._core = CoreFeaturizer()
-        self.add_hs = add_hs
+        self.hydrogen = hydrogen
         self.custom_smarts = custom_smarts or {}
         self._cache = {}
 
@@ -65,7 +65,7 @@ class MoleculeFeaturizer:
             self.input_smiles = Chem.MolToSmiles(mol_or_smiles) if mol_or_smiles else None
 
         # Prepare molecule (add hydrogens if requested)
-        self._mol = self._core._prepare_mol(self.input_mol, add_hs)
+        self._mol = self._core._prepare_mol(self.input_mol, self.hydrogen)
         if self._mol is None:
             raise ValueError(f"Failed to prepare molecule: {mol_or_smiles}")
 
@@ -279,7 +279,7 @@ class MoleculeFeaturizer:
                 'num_bonds': self.num_bonds,
                 'num_rings': self.num_rings,
                 'has_3d': self.has_3d,
-                'hydrogens_added': self.add_hs
+                'hydrogens_added': self.hydrogen
             }
         }
 

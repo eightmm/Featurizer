@@ -15,6 +15,10 @@ from featurizer import MoleculeFeaturizer
 featurizer = MoleculeFeaturizer("CCO")
 node, edge = featurizer.get_graph()
 
+# Without hydrogens for lighter graphs
+featurizer = MoleculeFeaturizer("CCO", hydrogen=False)
+node, edge = featurizer.get_graph()
+
 # Access features
 node_features = node['node_feats']  # [n_atoms, 122]
 edge_features = edge['edge_feats']  # [n_edges, 44]
@@ -214,8 +218,8 @@ pharmacophore_patterns = {
     'negative': '[*-]'
 }
 
-# Initialize with patterns
-featurizer = MoleculeFeaturizer("CCN(CC)c1ccccc1", custom_smarts=pharmacophore_patterns)
+# Initialize with patterns (optionally without hydrogens)
+featurizer = MoleculeFeaturizer("CCN(CC)c1ccccc1", hydrogen=False, custom_smarts=pharmacophore_patterns)
 
 # Get graph with custom features
 node, edge = featurizer.get_graph()
