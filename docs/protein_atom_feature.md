@@ -49,13 +49,13 @@ node, edge = featurizer.get_atom_features(distance_cutoff=4.0)  # Default: 4.0 �
 # Or use explicit alias
 node, edge = featurizer.get_atom_graph(distance_cutoff=4.0)
 
-# Node dictionary contains:
+# Node dictionary contains (SASA is automatically calculated and included):
 # - 'coord': 3D coordinates [n_atoms, 3]
 # - 'node_features': Atom tokens [n_atoms]
 # - 'atom_tokens': Same as node_features
-# - 'sasa': Solvent accessible surface area per atom
-# - 'residue_token': Residue type for each atom
-# - 'atom_element': Element type for each atom
+# - 'sasa': Solvent accessible surface area per atom [n_atoms] - INCLUDED BY DEFAULT
+# - 'residue_token': Residue type for each atom [n_atoms]
+# - 'atom_element': Element type for each atom (list)
 
 # Edge dictionary contains:
 # - 'edges': (src, dst) tuple of edge indices
@@ -166,25 +166,30 @@ import torch
 
 featurizer = ProteinFeaturizer("protein.pdb")
 
-# Get atom features with clear naming
-token, coord = featurizer.get_atom_features()  # or get_atom_tokens()
-# Or get separately
-coords = featurizer.get_atom_coordinates()
-tokens = featurizer.get_atom_tokens_only()
+# Get atom graph with SASA included
+node, edge = featurizer.get_atom_features(distance_cutoff=4.0)
 
-print(f"Number of atoms: {len(token)}")
-print(f"Unique atom types: {torch.unique(token).shape[0]}")
-print(f"Coordinate shape: {coord.shape}")
+# Access all atom-level data from node dictionary
+coords = node['coord']
+tokens = node['atom_tokens']
+sasa = node['sasa']  # SASA is automatically included!
+elements = node['atom_element']
+
+print(f"Number of atoms: {len(tokens)}")
+print(f"Unique atom types: {torch.unique(tokens).shape[0]}")
+print(f"Total SASA: {sasa.sum():.2f} Ų")
+print(f"Number of edges: {edge['edges'][0].shape[0]}")
 ```
 
 ### SASA-Based Analysis
 ```python
-# Get features with SASA
-features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
+# SASA is already included in get_atom_features!
+node, edge = featurizer.get_atom_features(distance_cutoff=4.0)
 
-# Analyze surface exposure
-sasa = features['sasa']
-tokens = features['token']
+# Access SASA directly from node dictionary
+sasa = node['sasa']
+tokens = node['atom_tokens']
+residue_tokens = node['residue_token']
 
 # Find exposed atoms
 exposed_mask = sasa > 20.0  # Ų threshold
@@ -194,7 +199,6 @@ print(f"Exposed atoms: {exposed_mask.sum()}/{len(tokens)}")
 print(f"Total SASA: {sasa.sum():.2f} Ų")
 
 # Per-residue SASA
-residue_tokens = features['residue_token']
 for res_type in torch.unique(residue_tokens):
     mask = residue_tokens == res_type
     res_sasa = sasa[mask].sum()

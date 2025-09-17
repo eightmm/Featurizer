@@ -36,12 +36,12 @@ from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
 
-# Atom-level features (node/edge format like residue)
-atom_node, atom_edge = featurizer.get_atom_features(distance_cutoff=4.0)  # Graph format
-atom_features_sasa = featurizer.get_atom_sasa()  # With SASA
+# Atom-level features (node/edge format with SASA included)
+atom_node, atom_edge = featurizer.get_atom_features(distance_cutoff=4.0)
+# atom_node contains: coord, atom_tokens, sasa, residue_token, atom_element
 
 # Residue-level features (node/edge format)
-res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)  # Graph format
+res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)
 ```
 
 ## 📊 Feature Overview
