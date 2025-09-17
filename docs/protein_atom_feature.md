@@ -1,12 +1,12 @@
-# Protein Atom-Level Features Documentation
+# Protein Atom-Level Features
 
 ## Overview
-Comprehensive atom-level feature extraction from protein structures with 175 unique token types and atomic SASA calculation.
+Atom-level feature extraction from protein structures with 175 unique token types and atomic SASA calculation.
 
 ## Atom Tokenization System
 
 ### Token Mapping
-The atom featurizer uses a sophisticated tokenization system that encodes each atom based on its residue type and atom name, creating 175 unique tokens.
+The atom featurizer encodes each atom based on its residue type and atom name, creating 175 unique tokens.
 
 **Token Range:**
 - 0-173: Standard residue-atom combinations
@@ -79,7 +79,7 @@ token, coord = featurizer.get_atom_tokens()
 
 ### 3. Atom Features with SASA (`get_atom_features_with_sasa()`)
 
-Comprehensive atom features including solvent accessible surface area.
+Atom features including solvent accessible surface area.
 
 ```python
 features = featurizer.get_atom_features_with_sasa()  # or get_atom_sasa()
@@ -117,7 +117,7 @@ features = get_protein_atom_features_with_sasa("protein.pdb")
 
 ## SASA Calculation
 
-Uses FreeSASA library for accurate solvent accessible surface area calculation.
+Uses FreeSASA library for solvent accessible surface area calculation.
 
 **Parameters:**
 - Algorithm: Lee & Richards
@@ -317,23 +317,6 @@ print(f"Partially exposed: {partially_exposed.sum()}")
 print(f"Exposed: {exposed.sum()}")
 ```
 
-## Performance Considerations
-
-### Speed
-- **Token extraction**: ~10-50ms (depends on protein size)
-- **SASA calculation**: ~100-300ms (FreeSASA computation)
-- **Combined features**: ~150-400ms total
-
-### Memory Usage
-- **Small protein (<1000 atoms)**: ~1 MB
-- **Medium protein (1000-5000 atoms)**: ~5 MB
-- **Large protein (>5000 atoms)**: ~10+ MB
-
-### Optimization Tips
-1. **Cache SASA results**: SASA calculation is expensive, cache when possible
-2. **Batch processing**: Process multiple structures in parallel
-3. **Selective extraction**: Use basic features if SASA not needed
-4. **Pre-standardization**: Clean PDBs beforehand for faster processing
 
 ## Token Reference Table
 
@@ -351,24 +334,3 @@ for (res, atom), token in sorted(token_dict.items(), key=lambda x: x[1]):
     print(f"{res:3s} {atom:4s} -> {token:3d}")
 ```
 
-## Applications
-
-### Structure Quality Assessment
-- Identify unusual atom positions
-- Detect missing atoms
-- Validate atom types
-
-### Binding Site Prediction
-- Surface exposure analysis
-- Cavity detection
-- Ligand accessibility
-
-### Molecular Dynamics
-- Initial coordinate extraction
-- Atom-level trajectory analysis
-- SASA evolution tracking
-
-### Deep Learning
-- Atom-level graph neural networks
-- 3D convolutional networks
-- Transformer models for proteins

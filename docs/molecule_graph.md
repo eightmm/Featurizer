@@ -1,7 +1,7 @@
-# Molecule Graph Representation Documentation
+# Molecule Graph Representation
 
 ## Overview
-Graph representations of molecules for Graph Neural Networks (GNNs) with comprehensive atom and bond features.
+Graph representations of molecules for Graph Neural Networks with atom and bond features.
 
 ## Graph Features (`get_graph()`)
 
@@ -174,32 +174,11 @@ batched_data = Batch.from_data_list(data_list)
 
 ## Feature Normalization
 
-All continuous features are normalized:
+Continuous features are normalized:
 - Charges: shifted and scaled to [0, 1]
 - Distances: normalized by typical bond lengths
-- Counts: divided by reasonable maximum values
+- Counts: divided by maximum values
 
-## Applications
-
-### Drug Discovery
-- Molecular property prediction
-- Drug-target interaction
-- ADMET prediction
-
-### Materials Science
-- Material property prediction
-- Molecular design
-- Reaction prediction
-
-### Chemical Informatics
-- Similarity searching
-- Scaffold hopping
-- Molecular clustering
-
-## Performance
-- **Small molecules (<50 atoms)**: ~5ms
-- **Medium molecules (50-100 atoms)**: ~10ms
-- **Large molecules (>100 atoms)**: ~20ms
 
 ## Custom SMARTS Features
 

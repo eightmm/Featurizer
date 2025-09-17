@@ -1,7 +1,7 @@
-# Molecular Descriptors Documentation
+# Molecular Descriptors
 
 ## Overview
-The molecular featurizer extracts 40 comprehensive descriptors covering physicochemical, topological, and structural properties.
+The molecular featurizer extracts 40 descriptors covering physicochemical, topological, and structural properties.
 
 ## Descriptor Categories
 
@@ -85,16 +85,8 @@ complexity = descriptors[13]  # BertzCT complexity
 
 ## Normalization Strategy
 
-All descriptors are normalized to approximately [0, 1] range for optimal machine learning performance:
+Descriptors are normalized to approximately [0, 1] range:
 - **Division normalization**: Most descriptors divided by typical maximum values
 - **Range shifting**: LogP and formal charge shifted to positive range before normalization
 - **Direct ratios**: Some descriptors (flexibility, heteroatom_ratio) are naturally in [0,1]
 
-## Applications
-
-These descriptors are suitable for:
-- **QSAR/QSPR modeling**: Property and activity prediction
-- **Similarity searching**: Molecular similarity calculations
-- **Clustering**: Chemical space exploration
-- **Machine learning**: Input features for neural networks
-- **Virtual screening**: Compound filtering and selection
