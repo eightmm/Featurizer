@@ -11,8 +11,9 @@ Converts molecular structures into graph format with node (atom) and edge (bond)
 ```python
 from featurizer import MoleculeFeaturizer
 
-featurizer = MoleculeFeaturizer()
-node, edge = featurizer.get_graph("CCO")
+# Initialize with molecule
+featurizer = MoleculeFeaturizer("CCO")
+node, edge = featurizer.get_graph()
 
 # Access features
 node_features = node['node_feats']  # [n_atoms, 122]
@@ -105,7 +106,8 @@ AllChem.EmbedMolecule(mol)
 AllChem.UFFOptimizeMolecule(mol)
 
 # Extract with 3D coordinates
-node, edge = featurizer.get_graph(mol)
+featurizer = MoleculeFeaturizer(mol)
+node, edge = featurizer.get_graph()
 coords = node['coords']  # 3D coordinates [n_atoms, 3]
 ```
 
@@ -123,7 +125,8 @@ edge['edges']  # [2, n_edges]
 import dgl
 import torch
 
-node, edge = featurizer.get_graph("c1ccccc1")
+featurizer = MoleculeFeaturizer("c1ccccc1")
+node, edge = featurizer.get_graph()
 
 # Create DGL graph
 src, dst = edge['edges']
@@ -142,7 +145,8 @@ print(f"Nodes: {g.num_nodes()}, Edges: {g.num_edges()}")
 ```python
 from torch_geometric.data import Data
 
-node, edge = featurizer.get_graph("CCO")
+featurizer = MoleculeFeaturizer("CCO")
+node, edge = featurizer.get_graph()
 
 data = Data(
     x=node['node_feats'],
@@ -164,7 +168,8 @@ smiles_list = ["CCO", "c1ccccc1", "CC(=O)O"]
 # Process batch
 graphs = []
 for smi in smiles_list:
-    node, edge = featurizer.get_graph(smi)
+    featurizer = MoleculeFeaturizer(smi)
+    node, edge = featurizer.get_graph()
     graphs.append((node, edge))
 
 # Collate for batching (example with DGL)
@@ -213,9 +218,12 @@ All continuous features are normalized:
 
 ### Custom Featurization
 ```python
+# Initialize with molecule
+featurizer = MoleculeFeaturizer(mol)
+
 # Get both features and graph
-features = featurizer.get_feature(mol)  # Descriptors + fingerprints
-node, edge = featurizer.get_graph(mol)  # Graph representation
+features = featurizer.get_feature()  # Descriptors + fingerprints
+node, edge = featurizer.get_graph()  # Graph representation
 
 # Combine for multi-modal learning
 combined = {
@@ -235,7 +243,8 @@ pattern = Chem.MolFromSmarts("c1ccccc1")
 matches = mol.GetSubstructMatches(pattern)
 
 # Get full graph
-node, edge = featurizer.get_graph(mol)
+featurizer = MoleculeFeaturizer(mol)
+node, edge = featurizer.get_graph()
 
 # Filter for substructure
 subgraph_atoms = matches[0]

@@ -16,18 +16,17 @@ pip install git+https://github.com/eightmm/Featurizer.git
 from featurizer import MoleculeFeaturizer
 from rdkit import Chem
 
-featurizer = MoleculeFeaturizer()
-
 # From SDF file
 suppl = Chem.SDMolSupplier('molecules.sdf')
 for mol in suppl:
-    features = featurizer.get_feature(mol)
-    node, edge = featurizer.get_graph(mol)
+    featurizer = MoleculeFeaturizer(mol)  # Initialize with molecule
+    features = featurizer.get_feature()
+    node, edge = featurizer.get_graph()
 
 # From SMILES
-smiles = "CC(=O)Oc1ccccc1C(=O)O"
-features = featurizer.get_feature(smiles)
-node, edge = featurizer.get_graph(smiles)
+featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")
+features = featurizer.get_feature()  # All descriptors and fingerprints
+node, edge = featurizer.get_graph()  # Graph representation
 ```
 
 ### Protein Features
@@ -76,11 +75,18 @@ adjacency = standard_contacts['adjacency_matrix']
 
 ### Batch Processing
 ```python
-smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
-features = [featurizer.get_feature(smi) for smi in smiles_list]
-
+from featurizer import MoleculeFeaturizer
 import torch
-descriptors = torch.stack([f['descriptor'] for f in features])
+
+smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
+all_features = []
+
+for smiles in smiles_list:
+    featurizer = MoleculeFeaturizer(smiles)
+    features = featurizer.get_feature()
+    all_features.append(features['descriptor'])
+
+descriptors = torch.stack(all_features)
 ```
 
 

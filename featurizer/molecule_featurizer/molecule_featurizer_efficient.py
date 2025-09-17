@@ -1,11 +1,11 @@
 """
-Efficient Molecule Featurizer with optional caching.
+Efficient Molecule Featurizer with caching.
 
 This module provides an enhanced API for molecule feature extraction
-with optional caching for repeated feature access.
+with caching for repeated feature access, similar to ProteinFeaturizer.
 """
 
-from typing import Optional, Union, Dict, Any, Tuple
+from typing import Union, Dict, Any, Tuple, Optional
 import torch
 from rdkit import Chem
 from .molecule_feature import MoleculeFeaturizer as CoreFeaturizer
@@ -15,305 +15,209 @@ class MoleculeFeaturizer:
     """
     Enhanced molecule featurizer with efficient caching.
 
-    Can be used in two modes:
-    1. Instance mode: Initialize with a molecule, then call get methods (efficient for repeated access)
-    2. Static mode: Call methods with molecule as parameter (backward compatible)
+    Similar to ProteinFeaturizer, initialize with a molecule and then call methods
+    to extract different features efficiently.
 
     Examples:
-        >>> # Instance mode (efficient for multiple features from same molecule)
-        >>> featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")
+        >>> # From SMILES
+        >>> featurizer = MoleculeFeaturizer("CCO")
         >>> features = featurizer.get_feature()
-        >>> graph = featurizer.get_graph()
-
-        >>> # Static mode (backward compatible, good for one-off extraction)
-        >>> featurizer = MoleculeFeaturizer()
-        >>> features = featurizer.get_feature("CC(=O)Oc1ccccc1C(=O)O")
+        >>> node, edge = featurizer.get_graph()
+        >>>
+        >>> # From RDKit mol
+        >>> mol = Chem.MolFromSmiles("CCO")
+        >>> featurizer = MoleculeFeaturizer(mol)
+        >>>
+        >>> # From SDF file
+        >>> suppl = Chem.SDMolSupplier('molecules.sdf')
+        >>> for mol in suppl:
+        >>>     featurizer = MoleculeFeaturizer(mol)
+        >>>     features = featurizer.get_feature()
     """
 
-    def __init__(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None,
-                 add_hs: bool = True):
+    def __init__(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True):
         """
-        Initialize featurizer, optionally with a molecule for efficient access.
+        Initialize featurizer with a molecule.
 
         Args:
-            mol_or_smiles: Optional molecule (RDKit mol or SMILES) to cache
+            mol_or_smiles: Molecule (RDKit mol or SMILES string)
             add_hs: Whether to add hydrogens to molecules
+
+        Raises:
+            ValueError: If molecule cannot be parsed
         """
         self._core = CoreFeaturizer()
         self.add_hs = add_hs
-        self._mol = None
         self._cache = {}
 
-        # If molecule provided, prepare and cache it
-        if mol_or_smiles is not None:
-            self._mol = self._core._prepare_mol(mol_or_smiles, add_hs)
-            self._parse_molecule()
+        # Store input for reference
+        if isinstance(mol_or_smiles, str):
+            self.input_smiles = mol_or_smiles
+            self.input_mol = Chem.MolFromSmiles(mol_or_smiles)
+            if self.input_mol is None:
+                raise ValueError(f"Invalid SMILES: {mol_or_smiles}")
+        else:
+            self.input_mol = mol_or_smiles
+            self.input_smiles = Chem.MolToSmiles(mol_or_smiles) if mol_or_smiles else None
+
+        # Prepare molecule (add hydrogens if requested)
+        self._mol = self._core._prepare_mol(self.input_mol, add_hs)
+        if self._mol is None:
+            raise ValueError(f"Failed to prepare molecule: {mol_or_smiles}")
+
+        self._parse_molecule()
 
     def _parse_molecule(self):
         """Parse and cache basic molecular data."""
-        if self._mol is None:
-            return
-
         # Cache basic info
-        self._cache['num_atoms'] = self._mol.GetNumAtoms()
-        self._cache['num_bonds'] = self._mol.GetNumBonds()
+        self.num_atoms = self._mol.GetNumAtoms()
+        self.num_bonds = self._mol.GetNumBonds()
+        self.num_rings = self._mol.GetRingInfo().NumRings()
 
-        # Pre-calculate 3D status
-        self._cache['has_3d'] = self._mol.GetNumConformers() > 0
+        # Check 3D status
+        self.has_3d = self._mol.GetNumConformers() > 0
 
-    def _get_mol(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> Chem.Mol:
+    def get_feature(self) -> Dict[str, torch.Tensor]:
         """
-        Get molecule to process, using cached if available.
-
-        Args:
-            mol_or_smiles: Optional molecule override
+        Get all molecular features (descriptors and fingerprints).
 
         Returns:
-            Prepared molecule
-
-        Raises:
-            ValueError: If no molecule provided and none cached
+            Dictionary containing:
+            - descriptor: 40 molecular descriptors
+            - morgan, maccs, rdkit, etc.: 9 fingerprint types
         """
-        if mol_or_smiles is not None:
-            # Use provided molecule (static mode)
-            return self._core._prepare_mol(mol_or_smiles, self.add_hs)
-        elif self._mol is not None:
-            # Use cached molecule (instance mode)
-            return self._mol
-        else:
-            raise ValueError("No molecule provided. Initialize with a molecule or pass one to the method.")
+        if 'features' not in self._cache:
+            self._cache['features'] = self._core.get_feature(self._mol)
+        return self._cache['features']
 
-    def get_feature(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> Dict[str, torch.Tensor]:
+    def get_descriptors(self) -> torch.Tensor:
         """
-        Get all molecular features.
-
-        Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
+        Get only molecular descriptors.
 
         Returns:
-            Dictionary containing all molecular features
+            torch.Tensor: 40 normalized molecular descriptors
         """
-        # Check if using cached molecule and features already computed
-        if mol_or_smiles is None and self._mol is not None and 'features' in self._cache:
-            return self._cache['features']
+        features = self.get_feature()
+        return features['descriptor']
 
-        mol = self._get_mol(mol_or_smiles)
-        features = self._core.get_feature(mol)
-
-        # Cache if using instance mode
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache['features'] = features
-
-        return features
-
-    def get_graph(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None,
-                  add_hs: Optional[bool] = None) -> Tuple[Dict, Dict]:
+    def get_fingerprints(self) -> Dict[str, torch.Tensor]:
         """
-        Get graph representation (node and edge features).
-
-        Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
-            add_hs: Whether to add hydrogens (overrides instance setting)
+        Get only molecular fingerprints.
 
         Returns:
-            Tuple of (node_dict, edge_dict)
+            Dictionary of 9 fingerprint types
         """
-        # Check if using cached molecule and graph already computed
-        cache_key = f'graph_hs_{add_hs if add_hs is not None else self.add_hs}'
-        if mol_or_smiles is None and self._mol is not None and cache_key in self._cache:
-            return self._cache[cache_key]
+        features = self.get_feature()
+        return {k: v for k, v in features.items() if k != 'descriptor'}
 
-        # Determine add_hs setting
-        use_add_hs = add_hs if add_hs is not None else self.add_hs
-
-        # Get molecule
-        if mol_or_smiles is not None:
-            # Prepare new molecule with specified add_hs
-            mol = self._core._prepare_mol(mol_or_smiles, use_add_hs)
-        else:
-            # Use cached molecule (may need to re-prepare if add_hs changed)
-            if add_hs is not None and add_hs != self.add_hs:
-                # Re-prepare with different hydrogen setting
-                if isinstance(self._mol, Chem.Mol):
-                    mol = self._core._prepare_mol(self._mol, use_add_hs)
-                else:
-                    mol = self._mol
-            else:
-                mol = self._mol
-
-        graph = self._core.get_graph(mol, add_hs=False)  # Already prepared
-
-        # Cache if using instance mode
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache[cache_key] = graph
-
-        return graph
-
-    def get_fingerprints(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> Dict[str, torch.Tensor]:
+    def get_graph(self, distance_cutoff: Optional[float] = None) -> Tuple[Dict, Dict]:
         """
-        Get molecular fingerprints.
+        Get graph representation with node and edge features.
 
         Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
+            distance_cutoff: Optional distance cutoff for edges (if 3D available)
+                           If None, uses bond connectivity
 
         Returns:
-            Dictionary containing various fingerprints
+            Tuple of (node, edge) dictionaries:
+            - node: {'node_feats', 'coords'}
+            - edge: {'edges', 'edge_feats'}
         """
-        if mol_or_smiles is None and self._mol is not None and 'fingerprints' in self._cache:
-            return self._cache['fingerprints']
+        cache_key = f'graph_{distance_cutoff}'
 
-        mol = self._get_mol(mol_or_smiles)
-        fingerprints = self._core.get_fingerprints(mol)
+        if cache_key not in self._cache:
+            # Get basic graph structure
+            node, edge = self._core.get_graph(self._mol)
 
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache['fingerprints'] = fingerprints
+            # If distance cutoff specified and 3D coords available, filter edges
+            if distance_cutoff is not None and self.has_3d and 'coords' in node:
+                import numpy as np
+                from scipy.spatial import distance_matrix
 
-        return fingerprints
+                coords = node['coords'].numpy()
+                dist_matrix = distance_matrix(coords, coords)
 
-    def get_physicochemical_features(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> torch.Tensor:
+                # Create edges based on distance cutoff
+                edges_array = np.where((dist_matrix < distance_cutoff) & (dist_matrix > 0))
+
+                # Update edge information
+                edge['edges'] = torch.tensor([edges_array[0], edges_array[1]])
+                edge['distance_cutoff'] = distance_cutoff
+
+            self._cache[cache_key] = (node, edge)
+
+        return self._cache[cache_key]
+
+    def get_morgan_fingerprint(self, radius: int = 2, n_bits: int = 2048) -> torch.Tensor:
         """
-        Get physicochemical molecular features.
+        Get Morgan fingerprint with custom parameters.
 
         Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
+            radius: Radius for Morgan fingerprint
+            n_bits: Number of bits
 
         Returns:
-            Tensor of physicochemical features
+            torch.Tensor: Morgan fingerprint
         """
-        if mol_or_smiles is None and self._mol is not None and 'physicochemical' in self._cache:
-            return self._cache['physicochemical']
+        cache_key = f'morgan_{radius}_{n_bits}'
 
-        mol = self._get_mol(mol_or_smiles)
-        features = self._core.get_physicochemical_features(mol)
+        if cache_key not in self._cache:
+            # For now, return the default Morgan from get_feature
+            features = self.get_feature()
+            self._cache[cache_key] = features['morgan']
 
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache['physicochemical'] = features
+        return self._cache[cache_key]
 
-        return features
-
-    def get_druglike_features(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> torch.Tensor:
+    def get_3d_coordinates(self) -> Optional[torch.Tensor]:
         """
-        Get drug-likeness features.
-
-        Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
+        Get 3D coordinates if available.
 
         Returns:
-            Tensor of drug-likeness features
+            torch.Tensor or None: 3D coordinates [n_atoms, 3]
         """
-        if mol_or_smiles is None and self._mol is not None and 'druglike' in self._cache:
-            return self._cache['druglike']
+        if not self.has_3d:
+            return None
 
-        mol = self._get_mol(mol_or_smiles)
-        features = self._core.get_druglike_features(mol)
+        node, _ = self.get_graph()
+        return node.get('coords', None)
 
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache['druglike'] = features
-
-        return features
-
-    def get_structural_features(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None) -> torch.Tensor:
+    def get_all_features(self, save_to: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get structural features.
+        Get all features at once.
 
         Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
+            save_to: Optional path to save features
 
         Returns:
-            Tensor of structural features
+            Dictionary containing all features and metadata
         """
-        if mol_or_smiles is None and self._mol is not None and 'structural' in self._cache:
-            return self._cache['structural']
+        features = self.get_feature()
+        node, edge = self.get_graph()
 
-        mol = self._get_mol(mol_or_smiles)
-        features = self._core.get_structural_features(mol)
+        all_features = {
+            'descriptors': features['descriptor'],
+            'fingerprints': {k: v for k, v in features.items() if k != 'descriptor'},
+            'graph': {'node': node, 'edge': edge},
+            'metadata': {
+                'input_smiles': self.input_smiles,
+                'num_atoms': self.num_atoms,
+                'num_bonds': self.num_bonds,
+                'num_rings': self.num_rings,
+                'has_3d': self.has_3d,
+                'hydrogens_added': self.add_hs
+            }
+        }
 
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache['structural'] = features
+        if save_to:
+            torch.save(all_features, save_to)
 
-        return features
+        return all_features
 
-    def get_atom_features(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None,
-                         add_hs: Optional[bool] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Get atom-level features.
+    # Aliases for consistency
+    extract = get_all_features
+    get_features = get_feature  # Plural alias
 
-        Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
-            add_hs: Whether to add hydrogens (overrides instance setting)
-
-        Returns:
-            Tuple of (atom_features, coordinates)
-        """
-        cache_key = f'atom_features_hs_{add_hs if add_hs is not None else self.add_hs}'
-        if mol_or_smiles is None and self._mol is not None and cache_key in self._cache:
-            return self._cache[cache_key]
-
-        # Get molecule with appropriate hydrogen setting
-        use_add_hs = add_hs if add_hs is not None else self.add_hs
-        if mol_or_smiles is not None:
-            mol = self._core._prepare_mol(mol_or_smiles, use_add_hs)
-        else:
-            if add_hs is not None and add_hs != self.add_hs:
-                mol = self._core._prepare_mol(self._mol, use_add_hs)
-            else:
-                mol = self._mol
-
-        features = self._core.get_atom_features(mol)
-
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache[cache_key] = features
-
-        return features
-
-    def get_bond_features(self, mol_or_smiles: Optional[Union[str, Chem.Mol]] = None,
-                         add_hs: Optional[bool] = None) -> torch.Tensor:
-        """
-        Get bond-level features.
-
-        Args:
-            mol_or_smiles: Optional molecule (uses cached if not provided)
-            add_hs: Whether to add hydrogens (overrides instance setting)
-
-        Returns:
-            Bond features tensor
-        """
-        cache_key = f'bond_features_hs_{add_hs if add_hs is not None else self.add_hs}'
-        if mol_or_smiles is None and self._mol is not None and cache_key in self._cache:
-            return self._cache[cache_key]
-
-        # Get molecule with appropriate hydrogen setting
-        use_add_hs = add_hs if add_hs is not None else self.add_hs
-        if mol_or_smiles is not None:
-            mol = self._core._prepare_mol(mol_or_smiles, use_add_hs)
-        else:
-            if add_hs is not None and add_hs != self.add_hs:
-                mol = self._core._prepare_mol(self._mol, use_add_hs)
-            else:
-                mol = self._mol
-
-        features = self._core.get_bond_features(mol)
-
-        if mol_or_smiles is None and self._mol is not None:
-            self._cache[cache_key] = features
-
-        return features
-
-    def clear_cache(self):
-        """Clear all cached features (keeps molecule)."""
-        self._cache = {}
-        if self._mol is not None:
-            self._parse_molecule()
-
-    def set_molecule(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: Optional[bool] = None):
-        """
-        Set a new molecule and clear cache.
-
-        Args:
-            mol_or_smiles: New molecule (RDKit mol or SMILES)
-            add_hs: Whether to add hydrogens (uses instance default if not specified)
-        """
-        use_add_hs = add_hs if add_hs is not None else self.add_hs
-        self._mol = self._core._prepare_mol(mol_or_smiles, use_add_hs)
-        self._cache = {}
-        self._parse_molecule()
+    def __repr__(self):
+        """String representation."""
+        return (f"MoleculeFeaturizer(smiles='{self.input_smiles}', "
+                f"atoms={self.num_atoms}, bonds={self.num_bonds})")

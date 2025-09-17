@@ -11,8 +11,9 @@ Extracts 40 normalized molecular descriptors covering physicochemical, topologic
 ```python
 from featurizer import MoleculeFeaturizer
 
-featurizer = MoleculeFeaturizer()
-features = featurizer.get_feature("CCO")
+# Initialize with molecule (like ProteinFeaturizer)
+featurizer = MoleculeFeaturizer("CCO")
+features = featurizer.get_feature()
 descriptors = features['descriptor']  # torch.Tensor [40]
 ```
 
@@ -126,10 +127,11 @@ Feature-based circular fingerprint.
 from featurizer import MoleculeFeaturizer
 import torch
 
-featurizer = MoleculeFeaturizer()
+# Initialize with molecule
+featurizer = MoleculeFeaturizer("c1ccccc1")
 
 # Get all fingerprints
-features = featurizer.get_feature("c1ccccc1")
+features = featurizer.get_feature()
 morgan = features['morgan']
 maccs = features['maccs']
 
@@ -139,8 +141,10 @@ def tanimoto_similarity(fp1, fp2):
     union = torch.sum(torch.max(fp1, fp2))
     return intersection / union
 
-mol1_features = featurizer.get_feature("CCO")
-mol2_features = featurizer.get_feature("CCN")
+featurizer1 = MoleculeFeaturizer("CCO")
+mol1_features = featurizer1.get_feature()
+featurizer2 = MoleculeFeaturizer("CCN")
+mol2_features = featurizer2.get_feature()
 similarity = tanimoto_similarity(mol1_features['morgan'], mol2_features['morgan'])
 ```
 
@@ -149,7 +153,8 @@ similarity = tanimoto_similarity(mol1_features['morgan'], mol2_features['morgan'
 The `get_feature()` method returns all features in a single dictionary:
 
 ```python
-features = featurizer.get_feature(mol)
+featurizer = MoleculeFeaturizer(mol)
+features = featurizer.get_feature()
 # Returns:
 {
     'descriptor': torch.Tensor,  # [40] molecular descriptors
@@ -173,16 +178,19 @@ Accepts both RDKit mol objects and SMILES strings:
 from rdkit import Chem
 
 # From SMILES
-features = featurizer.get_feature("CCO")
+featurizer = MoleculeFeaturizer("CCO")
+features = featurizer.get_feature()
 
 # From RDKit mol
 mol = Chem.MolFromSmiles("CCO")
-features = featurizer.get_feature(mol)
+featurizer = MoleculeFeaturizer(mol)
+features = featurizer.get_feature()
 
 # From SDF file
 suppl = Chem.SDMolSupplier('molecules.sdf')
 for mol in suppl:
-    features = featurizer.get_feature(mol)
+    featurizer = MoleculeFeaturizer(mol)
+    features = featurizer.get_feature()
 ```
 
 ## Performance
