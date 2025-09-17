@@ -56,6 +56,30 @@ atom_node, atom_edge = featurizer.get_atom_features(distance_cutoff=4.0)
 res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)
 ```
 
+### PDB Standardization
+```python
+from featurizer import PDBStandardizer
+
+# Standardize PDB file (removes hydrogens by default)
+standardizer = PDBStandardizer()
+standardizer.standardize("messy.pdb", "clean.pdb")
+
+# Keep hydrogens
+standardizer = PDBStandardizer(remove_hydrogens=False)
+standardizer.standardize("messy.pdb", "clean.pdb")
+
+# Or use convenience function
+from featurizer import standardize_pdb
+standardize_pdb("messy.pdb", "clean.pdb")
+
+# Standardization automatically:
+# - Removes water molecules
+# - Removes DNA/RNA residues
+# - Reorders atoms by standard definitions
+# - Renumbers residues sequentially
+# - Removes hydrogens (optional)
+```
+
 ## 📊 Feature Overview
 
 ### Molecules
@@ -92,6 +116,34 @@ node, edge = featurizer.get_graph()
 # If you need to check patterns separately
 custom_feats = featurizer.get_custom_smarts_features()
 # Returns: {'features': tensor, 'names': [...], 'patterns': {...}}
+```
+
+### PDB Standardization with Options
+```python
+from featurizer import PDBStandardizer
+
+# Remove hydrogens (default)
+standardizer = PDBStandardizer(remove_hydrogens=True)
+standardizer.standardize("messy.pdb", "clean.pdb")
+
+# Keep hydrogens for analysis
+standardizer = PDBStandardizer(remove_hydrogens=False)
+standardizer.standardize("messy.pdb", "clean_with_H.pdb")
+
+# Batch processing multiple PDB files
+import glob
+import os
+
+standardizer = PDBStandardizer()
+os.makedirs("clean_pdbs", exist_ok=True)
+
+for pdb_file in glob.glob("pdbs/*.pdb"):
+    output = pdb_file.replace("pdbs/", "clean_pdbs/")
+    try:
+        standardizer.standardize(pdb_file, output)
+        print(f"✓ Standardized: {pdb_file}")
+    except Exception as e:
+        print(f"✗ Failed {pdb_file}: {e}")
 ```
 
 ### Contact Maps with Different Thresholds
