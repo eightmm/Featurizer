@@ -77,12 +77,16 @@ from featurizer.protein_featurizer import ProteinFeaturizer
 # Initialize featurizer
 featurizer = ProteinFeaturizer()
 
-# Extract features from PDB file
+# Method 1: Extract all features at once
 features = featurizer.extract("protein.pdb")
-
-# Access node and edge features
 node_features = features['node']  # Per-residue features
 edge_features = features['edge']  # Residue-residue interactions
+
+# Method 2: Extract specific feature types
+sequence = featurizer.get_sequence_features("protein.pdb")
+geometry = featurizer.get_geometric_features("protein.pdb")
+sasa = featurizer.get_sasa_features("protein.pdb")
+contacts = featurizer.get_contact_map("protein.pdb", cutoff=8.0)
 ```
 
 ## 📊 Feature Details
@@ -150,6 +154,16 @@ edge = {
 
 ### Protein Features
 
+#### Available Individual Methods:
+- `get_sequence_features()`: Residue types and one-hot encoding
+- `get_geometric_features()`: Dihedrals, backbone curvature/torsion, self-distances
+- `get_sasa_features()`: Solvent Accessible Surface Area (10 components per residue)
+- `get_contact_map()`: Residue-residue contacts and distance matrices
+- `get_relative_position()`: Relative position encoding between residues
+- `get_node_features()`: All per-residue scalar and vector features
+- `get_edge_features()`: All interaction features between residues
+- `get_terminal_flags()`: N-terminal and C-terminal residue identification
+
 #### Node Features (Per Residue):
 - Residue type (20 amino acids + UNK)
 - Terminal flags (N-terminal, C-terminal)
@@ -186,17 +200,32 @@ coords = node['coords']  # 3D coordinates preserved
 ### Custom Feature Extraction
 
 ```python
-# Direct access to specific feature methods
+# Molecule features - direct access to specific methods
 from featurizer.molecule_featurizer.molecule_feature import MoleculeFeaturizer
 
-featurizer = MoleculeFeaturizer()
+mol_featurizer = MoleculeFeaturizer()
 mol = Chem.MolFromSmiles("CCO")
 
 # Get individual feature types
-phys_features = featurizer.get_physicochemical_features(mol)
-drug_features = featurizer.get_druglike_features(mol)
-struct_features = featurizer.get_structural_features(mol)
-fingerprints = featurizer.get_fingerprints(mol)
+phys_features = mol_featurizer.get_physicochemical_features(mol)
+drug_features = mol_featurizer.get_druglike_features(mol)
+struct_features = mol_featurizer.get_structural_features(mol)
+fingerprints = mol_featurizer.get_fingerprints(mol)
+
+# Protein features - direct access to specific methods
+from featurizer.protein_featurizer import ProteinFeaturizer
+
+prot_featurizer = ProteinFeaturizer()
+
+# Get individual feature types
+sequence = prot_featurizer.get_sequence_features("protein.pdb")
+geometry = prot_featurizer.get_geometric_features("protein.pdb")
+sasa = prot_featurizer.get_sasa_features("protein.pdb")
+contacts = prot_featurizer.get_contact_map("protein.pdb")
+rel_position = prot_featurizer.get_relative_position("protein.pdb")
+node_feats = prot_featurizer.get_node_features("protein.pdb")
+edge_feats = prot_featurizer.get_edge_features("protein.pdb")
+terminal = prot_featurizer.get_terminal_flags("protein.pdb")
 ```
 
 ### Batch Processing

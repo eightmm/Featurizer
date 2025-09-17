@@ -6,11 +6,7 @@ for machine learning applications.
 """
 
 # Import molecule featurizer components
-from .molecule_featurizer import (
-    MoleculeFeaturizer,
-    MoleculeFeatureExtractor,
-    create_molecule_features
-)
+from .molecule_featurizer import MoleculeFeaturizer
 
 # Import protein featurizer components
 from .protein_featurizer import (
@@ -29,8 +25,6 @@ __email__ = "your.email@example.com"
 __all__ = [
     # Molecule features
     "MoleculeFeaturizer",
-    "MoleculeFeatureExtractor",
-    "create_molecule_features",
     # Protein features
     "ProteinFeaturizer",
     "PDBStandardizer",
@@ -52,7 +46,8 @@ def extract_molecule_features(mol_or_smiles, add_hs=True):
     Returns:
         Dictionary containing molecule features
     """
-    return create_molecule_features(mol_or_smiles, add_hs)
+    featurizer = MoleculeFeaturizer()
+    return featurizer.get_feature(mol_or_smiles)
 
 def extract_protein_features(pdb_file, standardize=True, save_to=None):
     """
