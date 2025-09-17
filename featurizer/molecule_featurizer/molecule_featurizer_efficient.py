@@ -183,9 +183,6 @@ class MoleculeFeaturizer:
                     # Concatenate custom features to node features
                     original_feats = node['node_feats']
                     node['node_feats'] = torch.cat([original_feats, custom_features], dim=1)
-                    # Also store separately for reference
-                    node['custom_smarts_feats'] = custom_features
-                    node['custom_smarts_names'] = list(self.custom_smarts.keys())
 
             # If distance cutoff specified and 3D coords available, filter edges
             if distance_cutoff is not None and self.has_3d and 'coords' in node:

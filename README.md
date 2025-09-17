@@ -71,13 +71,11 @@ custom_patterns = {
 # Initialize with custom patterns
 featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
 
-# Get graph with custom features included
+# Get graph with custom features automatically included
 node, edge = featurizer.get_graph()
-# node['node_feats'] now includes custom SMARTS matches
-# node['custom_smarts_feats'] contains just the custom features
-# node['custom_smarts_names'] contains pattern names
+# node['node_feats'] is now 122 + n_patterns dimensions
 
-# Or get custom features separately
+# If you need to check patterns separately
 custom_feats = featurizer.get_custom_smarts_features()
 # Returns: {'features': tensor, 'names': [...], 'patterns': {...}}
 ```
