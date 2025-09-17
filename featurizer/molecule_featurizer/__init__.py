@@ -4,18 +4,14 @@ Molecule Featurizer Module
 A comprehensive toolkit for extracting molecular features from SMILES and RDKit mol objects.
 """
 
-from .molecule_feature import (
-    MoleculeFeatureExtractor,
-    create_molecule_features
-)
+from .molecule_feature import MoleculeFeaturizer as MoleculeFeaturizerCore
 
 __version__ = "0.2.0"
 __author__ = "Jaemin Sim"
 
 __all__ = [
-    "MoleculeFeatureExtractor",
-    "create_molecule_features",
     "MoleculeFeaturizer",  # Main API class
+    "MoleculeFeaturizerCore",  # Core implementation
 ]
 
 
@@ -51,7 +47,7 @@ class MoleculeFeaturizer:
         """
         self.add_hs = add_hs
         self.compute_3d = compute_3d
-        self._extractor = MoleculeFeatureExtractor(use_3d=compute_3d)
+        self._extractor = MoleculeFeaturizerCore()
 
     def extract(self, mol_or_smiles, feature_types=None, save_to=None):
         """
@@ -99,7 +95,8 @@ class MoleculeFeaturizer:
 
         # Extract requested features
         if "descriptors" in feature_types or "fingerprints" in feature_types:
-            mol_features = self._extractor.extract_all_features(mol, add_hs=self.add_hs)
+            smiles = input_value if input_type == "smiles" else Chem.MolToSmiles(mol)
+            mol_features = self._extractor.get_feature(smiles)
 
             if "descriptors" in feature_types:
                 features["descriptors"] = mol_features["descriptor"]
@@ -110,12 +107,10 @@ class MoleculeFeaturizer:
                 }
 
         if "graph" in feature_types:
-            # Get node/edge format features
-            node, edge = self._extractor.get_features(mol)
-            features["graph"] = {
-                'node': node,
-                'edge': edge
-            }
+            # Get graph format features
+            smiles = input_value if input_type == "smiles" else Chem.MolToSmiles(mol)
+            graph = self._extractor.get_graph(smiles)
+            features["graph"] = graph
 
         # Save if requested
         if save_to:
