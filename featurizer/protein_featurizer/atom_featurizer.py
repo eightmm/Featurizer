@@ -158,7 +158,7 @@ class AtomFeaturizer:
 
             # Get atom information
             residue_names.append(structure.residueName(i))
-            residue_numbers.append(structure.residueNumber(i))
+            residue_numbers.append(int(structure.residueNumber(i)))
             atom_names.append(structure.atomName(i).strip())
             chain_labels.append(structure.chainLabel(i))
             radii.append(structure.radius(i))
