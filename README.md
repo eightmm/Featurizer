@@ -38,7 +38,6 @@ featurizer = ProteinFeaturizer("protein.pdb")
 
 # Atom-level features (node/edge format with SASA included)
 atom_node, atom_edge = featurizer.get_atom_features(distance_cutoff=4.0)
-# atom_node contains: coord, atom_tokens, sasa, residue_token, atom_element
 
 # Residue-level features (node/edge format)
 res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)
@@ -84,29 +83,6 @@ import torch
 descriptors = torch.stack([f['descriptor'] for f in features])
 ```
 
-### GNN Integration
-```python
-import dgl
-
-node, edge = featurizer.get_graph(mol)
-
-g = dgl.graph((edge['edges'][0], edge['edges'][1]))
-g.ndata['feat'] = node['node_feats']
-g.edata['feat'] = edge['edge_feats']
-```
-
-### 3D Structure Preservation
-```python
-from rdkit import Chem
-from rdkit.Chem import AllChem
-
-mol = Chem.MolFromSmiles("CCO")
-AllChem.EmbedMolecule(mol)
-AllChem.UFFOptimizeMolecule(mol)
-
-node, edge = featurizer.get_graph(mol)
-coords_3d = node['coords']
-```
 
 ## 📖 Documentation
 
@@ -117,14 +93,6 @@ coords_3d = node['coords']
 - **[Protein Atom Features](docs/protein_atom_feature.md)** - Atom-level features guide
 - **[Molecular Descriptors Reference](docs/molecular_descriptors.md)** - Complete descriptor reference
 - **[Examples](examples/)** - Code examples and tutorials
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
 
 ## 📄 License
 
@@ -141,9 +109,3 @@ MIT License - see [LICENSE](LICENSE) file
 }
 ```
 
-## 🐛 Support
-
-For issues and questions, please use [GitHub Issues](https://github.com/eightmm/Featurizer/issues).
-
----
-Made with ❤️ for the computational chemistry and bioinformatics community
