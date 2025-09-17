@@ -320,24 +320,3 @@ def standardize_pdb(input_pdb_path: str, output_pdb_path: str, remove_hydrogens:
     return standardizer.standardize(input_pdb_path, output_pdb_path)
 
 
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description='PDB File Standardizer')
-    parser.add_argument('input_pdb', help='Input PDB file path')
-    parser.add_argument('output_pdb', help='Output PDB file path')
-    parser.add_argument('--keep-hydrogens', action='store_true',
-                       help='Keep hydrogen atoms (default: remove)')
-
-    args = parser.parse_args()
-
-    try:
-        output = standardize_pdb(
-            args.input_pdb,
-            args.output_pdb,
-            remove_hydrogens=not args.keep_hydrogens
-        )
-        print(f"Standardized PDB saved to: {output}")
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        exit(1)

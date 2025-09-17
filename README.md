@@ -188,7 +188,6 @@ descriptors = torch.stack(all_features)
 - **[Protein Residue Features](docs/protein_residue_feature.md)** - Residue-level features guide
 - **[Protein Atom Features](docs/protein_atom_feature.md)** - Atom-level features guide
 - **[Molecular Descriptors Reference](docs/molecular_descriptors.md)** - Complete descriptor reference
-- **[Examples](examples/)** - Code examples and tutorials
 
 ## 📄 License
 

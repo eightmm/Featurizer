@@ -334,34 +334,3 @@ def get_atom_features_with_sasa(pdb_file: str) -> Dict[str, torch.Tensor]:
     return featurizer.get_all_atom_features(pdb_file)
 
 
-if __name__ == "__main__":
-    # Test the featurizer
-    import sys
-
-    if len(sys.argv) > 1:
-        pdb_file = sys.argv[1]
-
-        # Test basic atom features
-        print("Testing atom feature extraction...")
-        token, coord = get_protein_atom_features(pdb_file)
-        print(f"Number of atoms: {len(token)}")
-        print(f"Token shape: {token.shape}")
-        print(f"Coordinate shape: {coord.shape}")
-        print(f"First 5 tokens: {token[:5]}")
-        print(f"First 5 coordinates:\n{coord[:5]}")
-
-        # Test with SASA
-        print("\nTesting with SASA calculation...")
-        features = get_atom_features_with_sasa(pdb_file)
-        print(f"Feature keys: {features.keys()}")
-        print(f"SASA shape: {features['sasa'].shape}")
-        print(f"First 5 SASA values: {features['sasa'][:5]}")
-
-        # Test residue aggregation
-        print("\nTesting residue aggregation...")
-        featurizer = AtomFeaturizer()
-        res_features = featurizer.get_residue_aggregated_features(pdb_file)
-        print(f"Number of residues: {len(res_features['residue_token'])}")
-        print(f"Total SASA per residue (first 5): {res_features['total_sasa'][:5]}")
-    else:
-        print("Usage: python atom_featurizer.py <pdb_file>")

@@ -658,28 +658,3 @@ class ResidueFeaturizer:
         return node, edge
 
 
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Residue Feature Extractor for Proteins')
-    parser.add_argument('input_pdb', help='Input PDB file path')
-    parser.add_argument('--output', '-o', help='Output file path for features (default: features.pt)',
-                       default='features.pt')
-
-    args = parser.parse_args()
-
-    try:
-        print(f"Processing {args.input_pdb}...")
-        featurizer = ResidueFeaturizer(args.input_pdb)
-        node, edge = featurizer.get_features()
-
-        # Combine features
-        features = {'node': node, 'edge': edge}
-
-        # Save features
-        torch.save(features, args.output)
-        print(f"Features saved to {args.output}")
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        sys.exit(1)
