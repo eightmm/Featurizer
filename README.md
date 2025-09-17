@@ -2,20 +2,6 @@
 
 A comprehensive Python package for extracting features from both **molecules** and **proteins** for machine learning applications, with special support for graph neural networks.
 
-## 🌟 Key Features
-
-### 🧪 Molecule Featurizer
-- **40 molecular descriptors** covering physicochemical, topological, and structural properties
-- **9 types of molecular fingerprints** (Morgan, MACCS, RDKit, etc.)
-- **Graph representations** with 3D coordinate preservation for GNNs
-- **Dual input support**: RDKit mol objects or SMILES strings
-
-### 🧬 Protein Featurizer
-- **PDB file processing** with automatic standardization
-- **Atom-level features** with 175 token types and atomic SASA
-- **Residue-level features** including geometry, SASA, and contacts
-- **Graph representations** for protein structure networks
-- **Multiple feature extraction methods** for different ML applications
 
 ## 📦 Installation
 
