@@ -5,6 +5,39 @@ The protein featurizer extracts structural and sequence features from PDB files,
 
 ## Feature Extraction Methods
 
+### Atom-Level Features
+
+#### `get_atom_features()`
+
+Extract atom-level tokenized features:
+
+```python
+token, coord = featurizer.get_atom_features("protein.pdb")
+```
+
+Returns:
+- `token`: Atom type tokens (175 unique types for residue-atom combinations)
+- `coord`: 3D coordinates for each atom
+
+#### `get_atom_features_with_sasa()`
+
+Get comprehensive atom features including SASA:
+
+```python
+features = featurizer.get_atom_features_with_sasa("protein.pdb")
+```
+
+Returns dictionary with:
+- `token`: Atom type tokens
+- `coord`: 3D coordinates
+- `sasa`: Solvent accessible surface area per atom
+- `residue_token`: Residue type for each atom
+- `atom_element`: Element type
+- `radius`: Atomic radii
+- `metadata`: Additional atom information
+
+### Residue-Level Features
+
 ### 1. Sequence Features (`get_sequence_features()`)
 
 Returns basic sequence information and encoding:
@@ -179,6 +212,28 @@ node, edge = featurizer.get_features()
 sequence = featurizer.get_sequence_features()
 geometry = featurizer.get_geometric_features()
 sasa = featurizer.get_sasa_features()
+```
+
+### Atom-Level Feature Extraction
+```python
+from featurizer import ProteinFeaturizer
+
+featurizer = ProteinFeaturizer("protein.pdb")
+
+# Get basic atom features
+token, coord = featurizer.get_atom_features()
+print(f"Number of atoms: {len(token)}")
+print(f"Atom tokens shape: {token.shape}")
+print(f"Coordinates shape: {coord.shape}")
+
+# Get atom features with SASA
+atom_features = featurizer.get_atom_features_with_sasa()
+print(f"SASA per atom: {atom_features['sasa']}")
+print(f"Atom radii: {atom_features['radius']}")
+
+# Direct usage without class
+from featurizer.protein_featurizer import get_protein_atom_features
+token, coord = get_protein_atom_features("protein.pdb")
 ```
 
 ### Working with Contact Maps

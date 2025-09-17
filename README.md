@@ -12,6 +12,7 @@ A comprehensive Python package for extracting features from both **molecules** a
 
 ### 🧬 Protein Featurizer
 - **PDB file processing** with automatic standardization
+- **Atom-level features** with 175 token types and atomic SASA
 - **Residue-level features** including geometry, SASA, and contacts
 - **Graph representations** for protein structure networks
 - **Multiple feature extraction methods** for different ML applications

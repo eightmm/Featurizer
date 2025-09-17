@@ -9,6 +9,7 @@ from .pdb_standardizer import PDBStandardizer, standardize_pdb
 from .residue_featurizer import ResidueFeaturizer
 from .main import process_pdb, batch_process
 from .protein_featurizer import ProteinFeaturizer as EfficientProteinFeaturizer
+from .atom_featurizer import AtomFeaturizer, get_protein_atom_features, get_atom_features_with_sasa
 
 __version__ = "0.2.0"
 __author__ = "Jaemin Sim"
@@ -16,8 +17,11 @@ __author__ = "Jaemin Sim"
 __all__ = [
     "PDBStandardizer",
     "ResidueFeaturizer",
+    "AtomFeaturizer",
     "standardize_pdb",
     "process_pdb",
+    "get_protein_atom_features",
+    "get_atom_features_with_sasa",
     "batch_process",
     "ProteinFeaturizer",  # Main API class
 ]
@@ -421,6 +425,70 @@ class ProteinFeaturizerOld:
             featurizer = ResidueFeaturizer(pdb_to_process)
             node, edge = featurizer.get_features()
             return node, edge
+        finally:
+            if self.standardize:
+                os.unlink(pdb_to_process)
+
+    def get_atom_features(self, pdb_file: str) -> tuple:
+        """
+        Get atom-level features from PDB file.
+
+        Args:
+            pdb_file: Path to the PDB file
+
+        Returns:
+            Tuple of (token, coord):
+                - token: torch.Tensor with atom type tokens
+                - coord: torch.Tensor with 3D coordinates
+        """
+        from .atom_featurizer import AtomFeaturizer
+        import tempfile
+        import os
+
+        # Prepare PDB file
+        if self.standardize:
+            with tempfile.NamedTemporaryFile(suffix='.pdb', delete=False) as tmp_file:
+                tmp_pdb = tmp_file.name
+            self._standardizer.standardize(pdb_file, tmp_pdb)
+            pdb_to_process = tmp_pdb
+        else:
+            pdb_to_process = pdb_file
+
+        try:
+            atom_featurizer = AtomFeaturizer()
+            token, coord = atom_featurizer.get_protein_atom_features(pdb_to_process)
+            return token, coord
+        finally:
+            if self.standardize:
+                os.unlink(pdb_to_process)
+
+    def get_atom_features_with_sasa(self, pdb_file: str) -> dict:
+        """
+        Get all atom-level features including SASA.
+
+        Args:
+            pdb_file: Path to the PDB file
+
+        Returns:
+            Dictionary with atom features including SASA
+        """
+        from .atom_featurizer import AtomFeaturizer
+        import tempfile
+        import os
+
+        # Prepare PDB file
+        if self.standardize:
+            with tempfile.NamedTemporaryFile(suffix='.pdb', delete=False) as tmp_file:
+                tmp_pdb = tmp_file.name
+            self._standardizer.standardize(pdb_file, tmp_pdb)
+            pdb_to_process = tmp_pdb
+        else:
+            pdb_to_process = pdb_file
+
+        try:
+            atom_featurizer = AtomFeaturizer()
+            features = atom_featurizer.get_all_atom_features(pdb_to_process)
+            return features
         finally:
             if self.standardize:
                 os.unlink(pdb_to_process)
