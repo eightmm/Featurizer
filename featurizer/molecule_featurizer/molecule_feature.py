@@ -74,6 +74,7 @@ class MoleculeFeaturizer:
     def _prepare_mol(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True) -> Chem.Mol:
         """
         Prepare molecule from SMILES string or RDKit mol object.
+        Preserves 3D coordinates when adding hydrogens if the molecule has a conformer.
 
         Args:
             mol_or_smiles: RDKit mol object or SMILES string
@@ -90,7 +91,14 @@ class MoleculeFeaturizer:
             mol = mol_or_smiles
 
         if add_hs and mol is not None:
-            mol = Chem.AddHs(mol)
+            # Check if molecule has 3D coordinates
+            has_3d_coords = mol.GetNumConformers() > 0
+            if has_3d_coords:
+                # Preserve 3D coordinates when adding hydrogens
+                mol = Chem.AddHs(mol, addCoords=True)
+            else:
+                # No 3D coords, just add hydrogens
+                mol = Chem.AddHs(mol)
 
         return mol
 
@@ -457,6 +465,8 @@ class MoleculeFeaturizer:
     def get_3d_coordinates(self, mol):
         """
         Get 3D coordinates for atoms if available, otherwise generate them.
+        If the molecule already has conformers, use the first one.
+        Otherwise, generate 3D coordinates using ETKDG method.
 
         Args:
             mol: RDKit mol object
@@ -464,24 +474,34 @@ class MoleculeFeaturizer:
         Returns:
             Tensor of shape (n_atoms, 3) containing 3D coordinates
         """
-        try:
-            conf = mol.GetConformer()
+        # Check if molecule already has conformers
+        if mol.GetNumConformers() > 0:
+            # Use existing conformer
+            conf = mol.GetConformer(0)
             coords = []
             for i in range(mol.GetNumAtoms()):
                 pos = conf.GetAtomPosition(i)
                 coords.append([pos.x, pos.y, pos.z])
             return torch.tensor(coords, dtype=torch.float32)
-        except:
+        else:
+            # Generate 3D coordinates
             try:
-                AllChem.EmbedMolecule(mol, randomSeed=42)
-                AllChem.UFFOptimizeMolecule(mol)
-                conf = mol.GetConformer()
-                coords = []
-                for i in range(mol.GetNumAtoms()):
-                    pos = conf.GetAtomPosition(i)
-                    coords.append([pos.x, pos.y, pos.z])
-                return torch.tensor(coords, dtype=torch.float32)
+                # Use ETKDG method for better 3D structure generation
+                AllChem.EmbedMolecule(mol, randomSeed=42, useRandomCoords=True)
+                if mol.GetNumConformers() > 0:
+                    # Optimize the geometry
+                    AllChem.UFFOptimizeMolecule(mol, maxIters=200)
+                    conf = mol.GetConformer(0)
+                    coords = []
+                    for i in range(mol.GetNumAtoms()):
+                        pos = conf.GetAtomPosition(i)
+                        coords.append([pos.x, pos.y, pos.z])
+                    return torch.tensor(coords, dtype=torch.float32)
+                else:
+                    # If embedding fails, return zero coordinates
+                    return torch.zeros((mol.GetNumAtoms(), 3), dtype=torch.float32)
             except:
+                # Fallback to zero coordinates if any error occurs
                 return torch.zeros((mol.GetNumAtoms(), 3), dtype=torch.float32)
 
     def get_atom_features(self, mol):
