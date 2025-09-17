@@ -8,8 +8,8 @@ from rdkit.Chem.Pharm2D import Generate, Gobbi_Pharm2D
 
 from rdkit.Chem import rdFingerprintGenerator
 
-class MolecularFeatureExtractor:
-    """Extract universal molecular features from RDKit mol objects."""
+class MoleculeFeatureExtractor:
+    """Extract universal molecule features from RDKit mol objects."""
 
         
     def get_physicochemical_features(self, mol):
@@ -162,7 +162,7 @@ class MolecularFeatureExtractor:
         return fingerprints
     
     def extract_all_features(self, mol, add_hs=True):
-        """Extract all molecular features from an RDKit mol object.
+        """Extract all molecule features from an RDKit mol object.
 
         Args:
             mol: RDKit mol object
@@ -234,17 +234,17 @@ class MolecularFeatureExtractor:
         return result
 
 
-def create_molecular_features(mol_or_smiles, add_hs=True):
-    """Create molecular features from RDKit mol object or SMILES string.
+def create_molecule_features(mol_or_smiles, add_hs=True):
+    """Create molecule features from RDKit mol object or SMILES string.
 
     Args:
         mol_or_smiles: RDKit mol object or SMILES string
         add_hs: Whether to add hydrogens (default: True)
 
     Returns:
-        Dictionary containing molecular features
+        Dictionary containing molecule features
     """
-    extractor = MolecularFeatureExtractor()
+    extractor = MoleculeFeatureExtractor()
 
     if isinstance(mol_or_smiles, str):
         mol = Chem.MolFromSmiles(mol_or_smiles)
@@ -258,10 +258,10 @@ def create_molecular_features(mol_or_smiles, add_hs=True):
 if __name__ == "__main__":
     # Example with SMILES
     smiles = "C1=CC=C(C=C1)C(=O)O"
-    features = create_molecular_features(smiles)
+    features = create_molecule_features(smiles)
     print("Features from SMILES:", features['descriptor'].shape)
 
     # Example with mol object
     mol = Chem.MolFromSmiles(smiles)
-    features2 = create_molecular_features(mol)
+    features2 = create_molecule_features(mol)
     print("Features from mol object:", features2['descriptor'].shape)

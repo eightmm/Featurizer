@@ -6,7 +6,7 @@ from rdkit import Chem
 from rdkit.Chem import rdPartialCharges, rdMolDescriptors
 
 
-class MolecularGraphBuilder:
+class MoleculeGraphBuilder:
     
     ATOMS = ['C', 'N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I', 'UNK']
     PERIODS = list(range(5))
@@ -493,8 +493,8 @@ class MolecularGraphBuilder:
         return g
 
 
-def create_molecular_graph(smiles):
-    builder = MolecularGraphBuilder()
+def create_molecule_graph(smiles):
+    builder = MoleculeGraphBuilder()
     return builder.smiles_to_graph(smiles)
 
 

@@ -5,18 +5,18 @@ Basic usage example of the Featurizer package.
 
 from featurizer import (
     ProteinFeaturizer,
-    create_molecular_features,
-    extract_molecular_features,
+    create_molecule_features,
+    extract_molecule_features,
     extract_protein_features
 )
 from rdkit import Chem
 
 
-def molecular_features_example():
+def molecule_features_example():
     """
-    Demonstrate molecular feature extraction from SMILES and mol objects.
+    Demonstrate molecule feature extraction from SMILES and mol objects.
     """
-    print("Molecular Features Example")
+    print("Molecule Features Example")
     print("=" * 50)
 
     # Example molecule: Aspirin
@@ -25,7 +25,7 @@ def molecular_features_example():
     print(f"\nExtracting features from SMILES: {smiles}")
 
     # Method 1: From SMILES string
-    features = create_molecular_features(smiles)
+    features = create_molecule_features(smiles)
 
     print("✓ Features extracted successfully!")
     print(f"  - Descriptor dimensions: {features['descriptor'].shape}")
@@ -34,7 +34,7 @@ def molecular_features_example():
 
     # Method 2: From RDKit mol object
     mol = Chem.MolFromSmiles(smiles)
-    features2 = create_molecular_features(mol, add_hs=False)
+    features2 = create_molecule_features(mol, add_hs=False)
 
     print("\n✓ Features from mol object extracted!")
     print(f"  - RDKit fingerprint size: {features2['rdkit'].shape}")
@@ -85,10 +85,10 @@ def convenience_functions_example():
     print("Convenience Functions Example")
     print("=" * 50)
 
-    # Quick molecular feature extraction
+    # Quick molecule feature extraction
     smiles = "CCO"  # Ethanol
-    mol_features = extract_molecular_features(smiles)
-    print(f"\n✓ Molecular features for {smiles}:")
+    mol_features = extract_molecule_features(smiles)
+    print(f"\n✓ Molecule features for {smiles}:")
     print(f"  - Number of feature types: {len(mol_features)}")
 
     # Quick protein feature extraction (if file exists)
@@ -108,14 +108,14 @@ def save_features_example():
     print("Saving Features Example")
     print("=" * 50)
 
-    # Save molecular features
+    # Save molecule features
     smiles = "CC(C)CC1=CC=C(C=C1)C(C)C"  # Ibuprofen
-    features = create_molecular_features(smiles)
+    features = create_molecule_features(smiles)
 
     try:
         import torch
         torch.save(features, "ibuprofen_features.pt")
-        print("✓ Molecular features saved to 'ibuprofen_features.pt'")
+        print("✓ Molecule features saved to 'ibuprofen_features.pt'")
     except ImportError:
         print("⚠ PyTorch not available for saving")
 
@@ -136,9 +136,9 @@ def custom_options_example():
     print("Custom Options Example")
     print("=" * 50)
 
-    # Molecular features without adding hydrogens
+    # Molecule features without adding hydrogens
     smiles = "c1ccccc1"  # Benzene
-    features = create_molecular_features(smiles, add_hs=False)
+    features = create_molecule_features(smiles, add_hs=False)
     print(f"✓ Extracted features without adding hydrogens")
 
     # Protein features without standardization
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # Run examples
-    molecular_features_example()
+    molecule_features_example()
     protein_features_example()
     convenience_functions_example()
     save_features_example()

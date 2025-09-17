@@ -1,14 +1,20 @@
 # Featurizer
 
-A comprehensive Python package for extracting features from molecular and protein structures for machine learning applications.
+A comprehensive Python package for extracting features from both **molecule** (small molecule/drug) and **protein** structures for machine learning applications.
 
 ## Features
 
-- 🧪 **Molecular Features**: Extract physicochemical, structural, and fingerprint features from molecules
-- 🧬 **Protein Features**: Extract geometric, chemical, and interaction features from PDB files
-- 📊 **Universal Descriptors**: Focus on generally applicable molecular properties
-- 🚀 **Flexible API**: Support for both SMILES strings and RDKit mol objects
-- 📦 **Modular Design**: Use individual components as needed
+### 🧪 Molecule Features (Small Molecules/Drugs)
+- Extract physicochemical, structural, and fingerprint features
+- Support for SMILES strings and RDKit mol objects
+- Universal descriptors applicable to any molecule
+- Multiple fingerprint types (Morgan, MACCS, RDKit, etc.)
+
+### 🧬 Protein Features (Macromolecules)
+- Extract geometric, chemical, and interaction features from PDB files
+- Residue-based node and edge features
+- Automatic PDB standardization
+- SASA and structural feature calculations
 
 ## Installation
 
@@ -28,19 +34,19 @@ pip install -e .
 
 ## Quick Start
 
-### Molecular Features
+### Molecule Features (Small Molecules)
 
 ```python
-from featurizer.molecule_featurizer import create_molecular_features
+from featurizer.molecule_featurizer import create_molecule_features
 from rdkit import Chem
 
 # From SMILES string
 smiles = "CC(=O)OC1=CC=CC=C1C(=O)O"  # Aspirin
-features = create_molecular_features(smiles)
+features = create_molecule_features(smiles)
 
 # From RDKit mol object
 mol = Chem.MolFromSmiles(smiles)
-features = create_molecular_features(mol)
+features = create_molecule_features(mol)
 
 # Access different feature types
 descriptors = features['descriptor']  # Physicochemical descriptors
@@ -48,7 +54,7 @@ morgan_fp = features['morgan']  # Morgan fingerprint
 maccs_fp = features['maccs']  # MACCS keys
 ```
 
-### Protein Features
+### Protein Features (Macromolecules)
 
 ```python
 from featurizer.protein_featurizer import Featurizer
@@ -67,7 +73,7 @@ edge_features = features['edge']
 features = featurizer.extract("protein.pdb", save_to="features.pt")
 ```
 
-## Molecular Features Extracted
+## Molecule Features Extracted (Small Molecules)
 
 ### Physicochemical Descriptors
 - Molecular weight, LogP, TPSA
@@ -98,7 +104,7 @@ features = featurizer.extract("protein.pdb", save_to="features.pt")
 - Topological torsion fingerprints
 - 2D pharmacophore fingerprints
 
-## Protein Features Extracted
+## Protein Features Extracted (Macromolecules)
 
 ### Node Features (Per Residue)
 - Residue type (one-hot encoding)
@@ -115,10 +121,10 @@ features = featurizer.extract("protein.pdb", save_to="features.pt")
 
 ## API Reference
 
-### Molecular Featurizer
+### Molecule Featurizer
 
 ```python
-create_molecular_features(mol_or_smiles, add_hs=True)
+create_molecule_features(mol_or_smiles, add_hs=True)
 ```
 
 **Parameters:**
@@ -151,14 +157,14 @@ Featurizer(standardize=True, keep_hydrogens=False)
 
 ## Advanced Usage
 
-### Custom Molecular Feature Extraction
+### Custom Molecule Feature Extraction
 
 ```python
-from featurizer.molecule_featurizer import MolecularFeatureExtractor
+from featurizer.molecule_featurizer import MoleculeFeatureExtractor
 from rdkit import Chem
 
 mol = Chem.MolFromSmiles("CCO")
-extractor = MolecularFeatureExtractor()
+extractor = MoleculeFeatureExtractor()
 
 # Get specific feature types
 phys_features = extractor.get_physicochemical_features(mol)
@@ -206,7 +212,7 @@ If you use this package in your research, please cite:
 
 ```bibtex
 @software{featurizer,
-  title = {Featurizer: A Python package for molecular and protein structure feature extraction},
+  title = {Featurizer: A Python package for molecule and protein structure feature extraction},
   author = {Jaemin Sim},
   year = {2025},
   url = {https://github.com/eightmm/featurizer}

@@ -5,13 +5,12 @@ A comprehensive Python package for extracting features from molecular and protei
 for machine learning applications.
 """
 
-# Import molecular featurizer components
+# Import molecule featurizer components
 from .molecule_featurizer import (
-    MolecularFeatureExtractor,
-    create_molecular_features,
-    MolecularGraph,
-    create_molecular_graph,
-    smiles_to_graph
+    MoleculeFeatureExtractor,
+    create_molecule_features,
+    MoleculeGraphBuilder,
+    create_molecule_graph
 )
 
 # Import protein featurizer components
@@ -29,12 +28,11 @@ __author__ = "Jaemin Sim"
 __email__ = "your.email@example.com"
 
 __all__ = [
-    # Molecular features
-    "MolecularFeatureExtractor",
-    "create_molecular_features",
-    "MolecularGraph",
-    "create_molecular_graph",
-    "smiles_to_graph",
+    # Molecule features
+    "MoleculeFeatureExtractor",
+    "create_molecule_features",
+    "MoleculeGraphBuilder",
+    "create_molecule_graph",
     # Protein features
     "ProteinFeaturizer",
     "PDBStandardizer",
@@ -45,18 +43,18 @@ __all__ = [
 ]
 
 # Convenience functions for quick access
-def extract_molecular_features(mol_or_smiles, add_hs=True):
+def extract_molecule_features(mol_or_smiles, add_hs=True):
     """
-    Convenience function to extract molecular features.
+    Convenience function to extract molecule features.
 
     Args:
         mol_or_smiles: RDKit mol object or SMILES string
         add_hs: Whether to add hydrogens (default: True)
 
     Returns:
-        Dictionary containing molecular features
+        Dictionary containing molecule features
     """
-    return create_molecular_features(mol_or_smiles, add_hs)
+    return create_molecule_features(mol_or_smiles, add_hs)
 
 def extract_protein_features(pdb_file, standardize=True, save_to=None):
     """
