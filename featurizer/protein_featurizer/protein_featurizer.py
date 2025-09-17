@@ -274,6 +274,19 @@ class ProteinFeaturizer:
 
         return self._cache['terminal_flags']
 
+    def get_features(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Get node and edge features in standard format.
+
+        Returns:
+            Tuple of (node, edge) dictionaries with:
+            - node: {'coord', 'node_scalar_features', 'node_vector_features'}
+            - edge: {'edges', 'edge_scalar_features', 'edge_vector_features'}
+        """
+        if 'features' not in self._cache:
+            self._cache['features'] = self._featurizer.get_features()
+        return self._cache['features']
+
     def get_all_features(self, save_to: Optional[str] = None) -> Dict[str, Any]:
         """
         Get all features at once.

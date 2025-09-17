@@ -49,6 +49,7 @@ from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
 
+node, edge = featurizer.get_features()  # Standard format
 features = featurizer.get_all_features()
 sasa = featurizer.get_sasa_features()
 contacts = featurizer.get_contact_map(cutoff=8.0)  # Customizable distance threshold (Å)

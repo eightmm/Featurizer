@@ -638,7 +638,9 @@ class ResidueFeaturizer:
 
         # Extract features
         node_scalar_features, node_vector_features = self._extract_residue_features(coords, residue_types)
-        edges, edge_scalar_features, edge_vector_features = self._extract_interaction_features(coords)
+        edges, edge_scalar_features, edge_vector_features = self._extract_interaction_features(
+            coords, distance_cutoff=8, relative_position_cutoff=32
+        )
 
         # Package features
         node = {

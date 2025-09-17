@@ -126,7 +126,29 @@ Inter-residue interaction features for edges within cutoff:
 }
 ```
 
-### 9. All Features (`get_all_features()`)
+### 9. Standard Features (`get_features()`)
+
+Returns node and edge features in the standard format:
+
+```python
+node, edge = featurizer.get_features()
+
+# node dictionary contains:
+{
+    'coord': torch.Tensor,                    # CA and SC coordinates
+    'node_scalar_features': torch.Tensor,     # Scalar features per residue
+    'node_vector_features': torch.Tensor      # Vector features per residue
+}
+
+# edge dictionary contains:
+{
+    'edges': tuple,                           # (src, dst) indices
+    'edge_scalar_features': torch.Tensor,     # Scalar edge features
+    'edge_vector_features': torch.Tensor      # Vector edge features
+}
+```
+
+### 10. All Features (`get_all_features()`)
 
 Returns complete feature set in one call:
 
@@ -150,6 +172,9 @@ from featurizer import ProteinFeaturizer
 # Initialize with PDB file
 featurizer = ProteinFeaturizer("protein.pdb")
 
+# Get standard node and edge features
+node, edge = featurizer.get_features()
+
 # Extract individual feature types
 sequence = featurizer.get_sequence_features()
 geometry = featurizer.get_geometric_features()
@@ -170,19 +195,28 @@ num_contacts = adjacency.sum(dim=1)  # Contacts per residue
 
 ### Graph Representation for GNNs
 ```python
-# Get graph features
-all_features = featurizer.get_all_features()
-node_features = all_features['node']
-edge_features = all_features['edge']
+# Get standard features format
+node, edge = featurizer.get_features()
+
+# Access coordinates and features
+coords = node['coord']  # CA and SC positions
+node_scalar = node['node_scalar_features']
+node_vector = node['node_vector_features']
+
+edges = edge['edges']  # (src, dst) tuples
+edge_scalar = edge['edge_scalar_features']
+edge_vector = edge['edge_vector_features']
 
 # Create graph with DGL
 import dgl
 
-src, dst = edge_features['edges']
+src, dst = edges
 g = dgl.graph((src, dst))
-g.ndata['feat'] = node_features['scalar']
-g.edata['feat'] = edge_features['vectors']
-g.edata['dist'] = edge_features['distance']
+g.ndata['coord'] = coords
+g.ndata['scalar_feat'] = node_scalar
+g.ndata['vector_feat'] = node_vector
+g.edata['scalar_feat'] = edge_scalar
+g.edata['vector_feat'] = edge_vector
 ```
 
 ### PDB Standardization

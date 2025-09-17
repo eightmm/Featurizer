@@ -393,6 +393,38 @@ class ProteinFeaturizerOld:
             if self.standardize:
                 os.unlink(pdb_to_process)
 
+    def get_features(self, pdb_file: str) -> tuple:
+        """
+        Get node and edge features in standard format.
+
+        Args:
+            pdb_file: Path to the PDB file
+
+        Returns:
+            Tuple of (node, edge) dictionaries with:
+            - node: {'coord', 'node_scalar_features', 'node_vector_features'}
+            - edge: {'edges', 'edge_scalar_features', 'edge_vector_features'}
+        """
+        import tempfile
+        import os
+
+        # Prepare PDB file
+        if self.standardize:
+            with tempfile.NamedTemporaryFile(suffix='.pdb', delete=False) as tmp_file:
+                tmp_pdb = tmp_file.name
+            self._standardizer.standardize(pdb_file, tmp_pdb)
+            pdb_to_process = tmp_pdb
+        else:
+            pdb_to_process = pdb_file
+
+        try:
+            featurizer = ResidueFeaturizer(pdb_to_process)
+            node, edge = featurizer.get_features()
+            return node, edge
+        finally:
+            if self.standardize:
+                os.unlink(pdb_to_process)
+
     def extract(self, pdb_file: str, save_to: str = None) -> dict:
         """
         Extract features from a PDB file.
