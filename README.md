@@ -37,30 +37,33 @@ pip install -e .
 ### Molecule Features (Small Molecules)
 
 ```python
-from featurizer.molecule_featurizer import create_molecule_features
+from featurizer import MoleculeFeaturizer
 from rdkit import Chem
+
+# Initialize featurizer
+featurizer = MoleculeFeaturizer()
 
 # From SMILES string
 smiles = "CC(=O)OC1=CC=CC=C1C(=O)O"  # Aspirin
-features = create_molecule_features(smiles)
+features = featurizer.extract(smiles)
 
 # From RDKit mol object
 mol = Chem.MolFromSmiles(smiles)
-features = create_molecule_features(mol)
+features = featurizer.extract(mol)
 
 # Access different feature types
-descriptors = features['descriptor']  # Physicochemical descriptors
-morgan_fp = features['morgan']  # Morgan fingerprint
-maccs_fp = features['maccs']  # MACCS keys
+descriptors = features['descriptors']  # Physicochemical descriptors
+fingerprints = features['fingerprints']  # Various fingerprints (Morgan, MACCS, etc.)
+metadata = features['metadata']  # Input information
 ```
 
 ### Protein Features (Macromolecules)
 
 ```python
-from featurizer.protein_featurizer import Featurizer
+from featurizer import ProteinFeaturizer
 
 # Initialize featurizer
-featurizer = Featurizer()
+featurizer = ProteinFeaturizer()
 
 # Extract features from a PDB file
 features = featurizer.extract("protein.pdb")
@@ -124,7 +127,10 @@ features = featurizer.extract("protein.pdb", save_to="features.pt")
 ### Molecule Featurizer
 
 ```python
-create_molecule_features(mol_or_smiles, add_hs=True)
+from featurizer import MoleculeFeaturizer
+
+featurizer = MoleculeFeaturizer(add_hs=True)
+features = featurizer.extract(mol_or_smiles)
 ```
 
 **Parameters:**
@@ -146,7 +152,9 @@ Dictionary containing:
 ### Protein Featurizer
 
 ```python
-Featurizer(standardize=True, keep_hydrogens=False)
+from featurizer import ProteinFeaturizer
+
+featurizer = ProteinFeaturizer(standardize=True, keep_hydrogens=False)
 ```
 
 **Methods:**
@@ -160,9 +168,14 @@ Featurizer(standardize=True, keep_hydrogens=False)
 ### Custom Molecule Feature Extraction
 
 ```python
-from featurizer.molecule_featurizer import MoleculeFeatureExtractor
+from featurizer import MoleculeFeaturizer, MoleculeFeatureExtractor
 from rdkit import Chem
 
+# Using high-level API
+featurizer = MoleculeFeaturizer()
+features = featurizer.extract("CCO")
+
+# Using low-level API for custom control
 mol = Chem.MolFromSmiles("CCO")
 extractor = MoleculeFeatureExtractor()
 
@@ -176,10 +189,27 @@ fingerprints = extractor.get_fingerprints(mol)
 ### Batch Processing
 
 ```python
-from featurizer.protein_featurizer import Featurizer
+from featurizer import ProteinFeaturizer, MoleculeFeaturizer
 
 # Process multiple proteins
-featurizer = Featurizer()
+protein_featurizer = ProteinFeaturizer()
+pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
+results = protein_featurizer.extract_batch(
+    pdb_files,
+    output_dir="processed_features/",
+    skip_existing=True,
+    verbose=True
+)
+
+# Process multiple molecules
+molecule_featurizer = MoleculeFeaturizer()
+smiles_list = ["CCO", "CC(=O)O", "c1ccccc1"]
+results = molecule_featurizer.extract_batch(
+    smiles_list,
+    output_dir="molecule_features/",
+    skip_existing=True,
+    verbose=True
+)
 pdb_files = ["1abc.pdb", "2def.pdb", "3ghi.pdb"]
 results = featurizer.extract_batch(
     pdb_files,

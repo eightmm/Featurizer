@@ -17,11 +17,11 @@ __all__ = [
     "standardize_pdb",
     "process_pdb",
     "batch_process",
-    "Featurizer",  # Main API class
+    "ProteinFeaturizer",  # Main API class
 ]
 
 
-class Featurizer:
+class ProteinFeaturizer:
     """
     High-level API for protein feature extraction.
 
@@ -30,16 +30,16 @@ class Featurizer:
 
     Examples:
         >>> # Basic usage
-        >>> from protein_featurizer import Featurizer
-        >>> featurizer = Featurizer()
+        >>> from featurizer import ProteinFeaturizer
+        >>> featurizer = ProteinFeaturizer()
         >>> features = featurizer.extract("protein.pdb")
 
         >>> # Without standardization
-        >>> featurizer = Featurizer(standardize=False)
+        >>> featurizer = ProteinFeaturizer(standardize=False)
         >>> features = featurizer.extract("clean.pdb")
 
         >>> # Custom options
-        >>> featurizer = Featurizer(keep_hydrogens=True)
+        >>> featurizer = ProteinFeaturizer(keep_hydrogens=True)
         >>> features = featurizer.extract("protein.pdb", save_to="features.pt")
     """
 

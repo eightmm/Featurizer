@@ -7,6 +7,7 @@ for machine learning applications.
 
 # Import molecule featurizer components
 from .molecule_featurizer import (
+    MoleculeFeaturizer,
     MoleculeFeatureExtractor,
     create_molecule_features,
     MoleculeGraphBuilder,
@@ -15,12 +16,12 @@ from .molecule_featurizer import (
 
 # Import protein featurizer components
 from .protein_featurizer import (
+    ProteinFeaturizer,
     PDBStandardizer,
     ResidueFeaturizer,
     standardize_pdb,
     process_pdb,
-    batch_process,
-    Featurizer as ProteinFeaturizer
+    batch_process
 )
 
 __version__ = "0.2.0"
@@ -29,6 +30,7 @@ __email__ = "your.email@example.com"
 
 __all__ = [
     # Molecule features
+    "MoleculeFeaturizer",
     "MoleculeFeatureExtractor",
     "create_molecule_features",
     "MoleculeGraphBuilder",

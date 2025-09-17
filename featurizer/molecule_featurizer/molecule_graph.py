@@ -436,8 +436,8 @@ class MoleculeGraphBuilder:
                 basic_smarts_feat[list(sum(matches, ())), idx] = 1
         
         atom_feat = torch.tensor(features, dtype=torch.float32)
-        return torch.cat([atom_feat, basic_smarts_feat, inhibitor_feat, substrate_feat, 
-                         stereo_feat, charge_feat, ext_neighbor_feat, binding_feat], dim=-1)
+        return torch.cat([atom_feat, basic_smarts_feat, functional_feat,
+                         stereo_feat, charge_feat, ext_neighbor_feat, property_feat], dim=-1)
     
     def get_bond_features(self, mol):
         _, bond_rings = self.get_ring_mappings(mol)
@@ -518,16 +518,14 @@ if __name__ == "__main__":
         print(f"Edge features: {graph.edata['feat'].shape}")
         print(f"RWPE: {graph.ndata['rwpe'].shape}")
         
-        print(f"\nAdvanced CYP3A4-Optimized Molecular Features:")
-        print(f"- {len(MolecularGraphBuilder.CYP3A4_INHIBITOR_SMARTS)} weighted inhibitor patterns (removed non-CYP pathways)")
-        print(f"- {len(MolecularGraphBuilder.CYP3A4_SUBSTRATE_SMARTS)} weighted substrate patterns (CYP-specific reactions only)")
+        print(f"\nUniversal Molecule Graph Features:")
+        print(f"- {len(builder.FUNCTIONAL_GROUP_SMARTS)} functional group patterns")
         print(f"- 8D stereochemistry features (chirality, planarity)")
         print(f"- 2D partial charge features (Gasteiger normalized)")
         print(f"- 6D extended neighborhood (1-hop, 2-hop normalized)")
-        print(f"- 8D CYP3A4 binding site features (size, lipophilicity, flexibility)")
+        print(f"- 8D molecular property features (size, hydrophobicity, flexibility)")
         print(f"- Enhanced degree and ring features with centrality")
-        print(f"- Pattern confidence weighting (0.3-1.0 based on literature)")
-        print(f"- Removed ester/amide hydrolysis, deamination (non-CYP pathways)")
+        print(f"- Universal atom and bond descriptors")
         print(f"- All features normalized to [0,1] range for optimal learning")
         
         print(f"\nFirst 3 nodes:")
