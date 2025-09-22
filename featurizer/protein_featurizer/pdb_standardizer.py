@@ -300,7 +300,7 @@ class PDBStandardizer:
         temp_factor = original_line[60:66].strip() if len(original_line) > 60 else "0.00"
         element = original_line[76:78].strip() if len(original_line) > 76 else atom_name[0]
 
-        return f"HETATM{atom_counter:5d}  {atom_name:<4s} {res_name} {chain_id}{hetatm_counter:>4d}    " \
+        return f"HETATM{atom_counter:5d}  {atom_name:<4s}{res_name} {chain_id}{hetatm_counter:>4d}    " \
                f"{x:8.3f}{y:8.3f}{z:8.3f}{occupancy:>6s}{temp_factor:>6s}          {element:>2s}\n"
 
 
