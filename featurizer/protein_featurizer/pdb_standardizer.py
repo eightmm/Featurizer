@@ -262,7 +262,7 @@ class PDBStandardizer:
 
                 for atom_name, atom_line in residue_atoms.items():
                     line = self._format_hetatm_line(
-                        atom_line, atom_counter, hetatm_counter, res_name
+                        atom_line, atom_counter, hetatm_counter, res_name, chain_id
                     )
                     lines.append(line)
                     atom_counter += 1
@@ -288,7 +288,7 @@ class PDBStandardizer:
                f"{x:8.3f}{y:8.3f}{z:8.3f}{occupancy:>6s}{temp_factor:>6s}          {element:>2s}\n"
 
     def _format_hetatm_line(self, original_line: str, atom_counter: int,
-                           hetatm_counter: int, res_name: str) -> str:
+                           hetatm_counter: int, res_name: str, chain_id: str) -> str:
         """
         Format a HETATM line in standardized PDB format.
         """
@@ -300,8 +300,8 @@ class PDBStandardizer:
         temp_factor = original_line[60:66].strip() if len(original_line) > 60 else "0.00"
         element = original_line[76:78].strip() if len(original_line) > 76 else atom_name[0]
 
-        return f"HETATM{atom_counter:5d} {atom_name:<4s}  {res_name}  {hetatm_counter:>4d}    " \
-               f"{x:8.3f}{y:8.3f}{z:8.3f}  {occupancy:>6s}{temp_factor:>6s}           {element:>2s}\n"
+        return f"HETATM{atom_counter:5d}  {atom_name:<4s} {res_name} {chain_id}{hetatm_counter:>4d}    " \
+               f"{x:8.3f}{y:8.3f}{z:8.3f}{occupancy:>6s}{temp_factor:>6s}          {element:>2s}\n"
 
 
 def standardize_pdb(input_pdb_path: str, output_pdb_path: str, remove_hydrogens: bool = True) -> str:
