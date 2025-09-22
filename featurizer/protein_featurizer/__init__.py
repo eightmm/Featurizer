@@ -10,7 +10,7 @@ from .residue_featurizer import ResidueFeaturizer
 from .protein_featurizer import ProteinFeaturizer as EfficientProteinFeaturizer
 from .atom_featurizer import AtomFeaturizer, get_protein_atom_features, get_atom_features_with_sasa
 
-__version__ = "0.2.0"
+__version__ = "0.1.0"
 __author__ = "Jaemin Sim"
 
 __all__ = [

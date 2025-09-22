@@ -7,7 +7,7 @@ A comprehensive toolkit for extracting molecular features from SMILES and RDKit 
 from .molecule_feature import MoleculeFeaturizer as MoleculeFeaturizerCore
 from .molecule_featurizer_efficient import MoleculeFeaturizer as EfficientMoleculeFeaturizer
 
-__version__ = "0.2.0"
+__version__ = "0.1.0"
 __author__ = "Jaemin Sim"
 
 __all__ = [

@@ -14,11 +14,9 @@ from .protein_featurizer import (
     PDBStandardizer,
     ResidueFeaturizer,
     standardize_pdb,
-    process_pdb,
-    batch_process
 )
 
-__version__ = "0.2.0"
+__version__ = "0.1.0"
 __author__ = "Jaemin Sim"
 __email__ = "your.email@example.com"
 
@@ -30,8 +28,6 @@ __all__ = [
     "PDBStandardizer",
     "ResidueFeaturizer",
     "standardize_pdb",
-    "process_pdb",
-    "batch_process",
 ]
 
 # Convenience functions for quick access

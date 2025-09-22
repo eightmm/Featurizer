@@ -12,7 +12,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="featurizer",
-    version="0.2.0",
+    version="0.1.0",
     author="Jaemin Sim",
     author_email="your.email@example.com",
     description="A comprehensive toolkit for extracting features from molecular and protein structures",
