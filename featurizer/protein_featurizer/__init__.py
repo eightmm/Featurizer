@@ -7,7 +7,6 @@ A comprehensive toolkit for extracting structural features from protein PDB file
 import torch
 from .pdb_standardizer import PDBStandardizer, standardize_pdb
 from .residue_featurizer import ResidueFeaturizer
-from .main import process_pdb, batch_process
 from .protein_featurizer import ProteinFeaturizer as EfficientProteinFeaturizer
 from .atom_featurizer import AtomFeaturizer, get_protein_atom_features, get_atom_features_with_sasa
 
@@ -19,10 +18,8 @@ __all__ = [
     "ResidueFeaturizer",
     "AtomFeaturizer",
     "standardize_pdb",
-    "process_pdb",
     "get_protein_atom_features",
     "get_atom_features_with_sasa",
-    "batch_process",
     "ProteinFeaturizer",  # Main API class
 ]
 
