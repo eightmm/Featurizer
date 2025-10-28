@@ -391,6 +391,21 @@ class ProteinFeaturizer:
             else:
                 residue_number_tensor = torch.tensor(residue_nums, dtype=torch.long)
 
+            # Create residue_count: sequential index starting from 0, incrementing when residue changes
+            # Example: residue_number [1,1,1,5,5,7,7,7] -> residue_count [0,0,0,1,1,2,2,2]
+            residue_count = torch.zeros_like(residue_number_tensor)
+            if len(residue_number_tensor) > 0:
+                current_count = 0
+                residue_count[0] = current_count
+                for i in range(1, len(residue_number_tensor)):
+                    # Check if residue changed (consider both residue number and chain)
+                    chain_labels = atom_features['metadata']['chain_labels']
+                    residue_changed = (residue_number_tensor[i] != residue_number_tensor[i-1]) or \
+                                    (chain_labels[i] != chain_labels[i-1])
+                    if residue_changed:
+                        current_count += 1
+                    residue_count[i] = current_count
+
             node = {
                 'coord': atom_features['coord'],
                 'node_features': atom_features['token'],  # Token as main feature
@@ -399,6 +414,7 @@ class ProteinFeaturizer:
                 'residue_token': atom_features['residue_token'],
                 'atom_element': atom_features['atom_element'],
                 'residue_number': residue_number_tensor,
+                'residue_count': residue_count,
                 'atom_name': atom_features['metadata']['atom_names'],
                 'chain_label': atom_features['metadata']['chain_labels']
             }
