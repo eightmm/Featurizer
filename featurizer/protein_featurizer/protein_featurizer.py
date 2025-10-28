@@ -384,13 +384,23 @@ class ProteinFeaturizer:
             edge_distances = torch.tensor(dist_matrix[edges_array])
 
             # Package as node and edge dictionaries
+            # Convert residue_numbers to tensor if it's not already
+            residue_nums = atom_features['metadata']['residue_numbers']
+            if isinstance(residue_nums, torch.Tensor):
+                residue_number_tensor = residue_nums.clone()
+            else:
+                residue_number_tensor = torch.tensor(residue_nums, dtype=torch.long)
+
             node = {
                 'coord': atom_features['coord'],
                 'node_features': atom_features['token'],  # Token as main feature
                 'atom_tokens': atom_features['token'],
                 'sasa': atom_features['sasa'],
                 'residue_token': atom_features['residue_token'],
-                'atom_element': atom_features['atom_element']
+                'atom_element': atom_features['atom_element'],
+                'residue_number': residue_number_tensor,
+                'atom_name': atom_features['metadata']['atom_names'],
+                'chain_label': atom_features['metadata']['chain_labels']
             }
 
             edge = {
