@@ -24,6 +24,13 @@ except ImportError:
     FREESASA_AVAILABLE = False
     fs = None
 
+# Import unified PDB parsing utilities from atom_featurizer
+try:
+    from .atom_featurizer import is_atom_record, is_hetatm_record, is_hydrogen, parse_pdb_atom_line
+except ImportError:
+    # Fallback if running as standalone
+    from atom_featurizer import is_atom_record, is_hetatm_record, is_hydrogen, parse_pdb_atom_line
+
 
 # Amino acid mappings
 AMINO_ACID_3TO1 = {
@@ -81,7 +88,7 @@ class ResidueFeaturizer:
 
     def _parse_pdb(self, pdb_file: str) -> Tuple[pd.MultiIndex, pd.MultiIndex, pd.DataFrame, pd.DataFrame]:
         """
-        Parse PDB file and extract atom information.
+        Parse PDB file and extract atom information using unified parsing logic.
 
         Args:
             pdb_file: Path to PDB file
@@ -96,20 +103,31 @@ class ResidueFeaturizer:
         protein_data, hetero_data = {'coord': []}, {'coord': []}
 
         for line in lines:
-            record_type = line[:6].strip()
-            if record_type in ['ATOM', 'HETATM'] and len(line) > 13 and line[13] != 'H' and line[17:20].strip() != 'HOH':
-                atom_type = line[12:17].strip()
-                res_type = AMINO_ACID_3_TO_INT.get(line[17:20].strip(), 20)
-                chain_id = line[21]
-                res_num = int(line[22:26])
-                xyz = [float(line[idx:idx + 8]) for idx in range(30, 54, 8)]
+            # Use unified parsing functions
+            if not (is_atom_record(line) or is_hetatm_record(line)):
+                continue
 
-                if record_type == 'ATOM':
-                    protein_index.append((chain_id, res_num, res_type, atom_type))
-                    protein_data['coord'].append(xyz)
-                elif record_type == 'HETATM':
-                    hetero_index.append(('HETERO', res_num, res_type, atom_type))
-                    hetero_data['coord'].append(xyz)
+            # Skip hydrogens
+            if is_hydrogen(line):
+                continue
+
+            # Parse line components using unified function (now includes element)
+            record_type, atom_type, res_name, res_num, chain_id, xyz, element = parse_pdb_atom_line(line)
+
+            # Skip water molecules
+            if res_name == 'HOH':
+                continue
+
+            # Convert residue name to integer token
+            res_type = AMINO_ACID_3_TO_INT.get(res_name, 20)  # 20 is XXX/unknown
+
+            # Store data based on record type
+            if record_type == 'ATOM':
+                protein_index.append((chain_id, res_num, res_type, atom_type))
+                protein_data['coord'].append(xyz)
+            elif record_type == 'HETATM':
+                hetero_index.append(('HETERO', res_num, res_type, atom_type))
+                hetero_data['coord'].append(xyz)
 
         protein_index = pd.MultiIndex.from_tuples(protein_index, names=['chain', 'res_num', 'AA', 'atom'])
         hetero_index = pd.MultiIndex.from_tuples(hetero_index, names=['chain', 'res_num', 'AA', 'atom'])

@@ -31,6 +31,7 @@ STANDARD_ATOMS = {
     'TRP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'NE1', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2'],
     'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
     'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2'],
+    'XXX': ['N', 'CA', 'C', 'O', 'CB', 'P', 'S', 'SE'],
     'UNK': ['N', 'CA', 'C', 'O', 'CB']
 }
 
@@ -43,6 +44,59 @@ NUCLEIC_ACID_RESIDUES = {
     # Modified nucleotides
     'ADE', 'THY', 'GUA', 'CYT', 'URA',
     '1MA', '2MG', '4SU', '5MC', '5MU', 'PSU', 'H2U', 'M2G', 'OMC', 'OMG'
+}
+
+# Mapping of non-standard residue names to standard amino acids
+# This includes protonation states where heavy atom structure is identical
+RESIDUE_NAME_MAPPING = {
+    # Histidine protonation states (heavy atoms identical)
+    'HID': 'HIS',  # δ-protonated histidine (neutral)
+    'HIE': 'HIS',  # ε-protonated histidine (neutral)
+    'HIP': 'HIS',  # doubly protonated histidine (positive)
+    'HSD': 'HIS',  # alternative δ-protonated (CHARMM naming)
+    'HSE': 'HIS',  # alternative ε-protonated (CHARMM naming)
+    'HSP': 'HIS',  # alternative doubly protonated (CHARMM naming)
+    'HIN': 'HIS',  # alternative neutral histidine
+
+    # Cysteine protonation/bonding states (heavy atoms identical)
+    'CYX': 'CYS',  # disulfide-bonded cysteine (deprotonated thiol)
+    'CYM': 'CYS',  # deprotonated cysteine (thiolate anion)
+    'CYN': 'CYS',  # alternative deprotonated cysteine
+
+    # Aspartic acid protonation states (heavy atoms identical)
+    'ASH': 'ASP',  # protonated aspartic acid (neutral COOH)
+    'ASPP': 'ASP', # alternative protonated form
+    # NOTE: ASN (Asparagine) is a different amino acid and should NOT be mapped to ASP
+
+    # Glutamic acid protonation states (heavy atoms identical)
+    'GLH': 'GLU',  # protonated glutamic acid (neutral COOH)
+    'GLUP': 'GLU', # alternative protonated form
+    'GLUH': 'GLU', # alternative protonated form
+
+    # Lysine protonation states (heavy atoms identical)
+    'LYN': 'LYS',  # deprotonated lysine (neutral amine)
+    'LYSN': 'LYS', # alternative deprotonated lysine
+
+    # Arginine protonation states (heavy atoms identical)
+    'ARN': 'ARG',  # deprotonated arginine (neutral, rare)
+
+    # Tyrosine protonation states (heavy atoms identical)
+    'TYM': 'TYR',  # deprotonated tyrosine (tyrosinate anion)
+    'TYN': 'TYR',  # alternative deprotonated tyrosine
+
+    # Serine protonation states (heavy atoms identical)
+    'SER-': 'SER', # deprotonated serine
+
+    # Threonine protonation states (heavy atoms identical)
+    'THR-': 'THR', # deprotonated threonine
+
+    # Tryptophan protonation states (heavy atoms identical)
+    'TRP-': 'TRP', # deprotonated tryptophan
+
+    # N-terminal and C-terminal variants
+    'ACE': 'ACE',  # acetylated N-terminus (keep as is for HETATM)
+    'NME': 'NME',  # N-methylated C-terminus (keep as is for HETATM)
+    'NH2': 'NH2',  # amidated C-terminus (keep as is for HETATM)
 }
 
 
@@ -68,6 +122,19 @@ class PDBStandardizer:
         self.remove_hydrogens = remove_hydrogens
         self.standard_atoms = STANDARD_ATOMS
         self.nucleic_acid_residues = NUCLEIC_ACID_RESIDUES
+        self.residue_name_mapping = RESIDUE_NAME_MAPPING
+
+    def _normalize_residue_name(self, res_name: str) -> str:
+        """
+        Normalize residue name to standard amino acid name.
+
+        Args:
+            res_name: Original residue name (e.g., 'HID', 'HIE', 'MSE')
+
+        Returns:
+            Standardized residue name (e.g., 'HIS', 'HIS', 'MET')
+        """
+        return self.residue_name_mapping.get(res_name, res_name)
 
     def standardize(self, input_pdb_path: str, output_pdb_path: str) -> str:
         """
@@ -144,8 +211,11 @@ class PDBStandardizer:
         if res_name in self.nucleic_acid_residues:
             return
 
-        # Store residue information
-        residue_key = (chain_id, res_num_str, res_name)
+        # Normalize residue name to standard amino acid
+        normalized_res_name = self._normalize_residue_name(res_name)
+
+        # Store residue information with normalized name
+        residue_key = (chain_id, res_num_str, normalized_res_name)
         if residue_key not in residue_dict:
             residue_dict[residue_key] = {}
         residue_dict[residue_key][atom_name] = line
