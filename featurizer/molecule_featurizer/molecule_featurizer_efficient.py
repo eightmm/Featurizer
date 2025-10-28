@@ -157,7 +157,7 @@ class MoleculeFeaturizer:
         return features
 
     def get_graph(self, distance_cutoff: Optional[float] = None,
-                  include_custom_smarts: bool = True) -> Tuple[Dict, Dict]:
+                  include_custom_smarts: bool = True) -> Tuple[Dict, Dict, torch.Tensor]:
         """
         Get graph representation with node and edge features.
 
@@ -167,16 +167,17 @@ class MoleculeFeaturizer:
             include_custom_smarts: Whether to include custom SMARTS features in node features
 
         Returns:
-            Tuple of (node, edge) dictionaries:
+            Tuple of (node, edge, adj):
             - node: {'node_feats', 'coords', 'custom_smarts_feats' (if available)}
             - edge: {'edges', 'edge_feats'}
+            - adj: adjacency matrix with bond features [num_atoms, num_atoms, num_bond_features]
         """
         cache_key = f'graph_{distance_cutoff}_{include_custom_smarts}'
 
         if cache_key not in self._cache:
             # Get basic graph structure
             # Pass the molecule without additional hydrogen processing since it's already prepared
-            node, edge = self._core.get_graph(self._mol, add_hs=False)
+            node, edge, adj = self._core.get_graph(self._mol, add_hs=False)
 
             # Add custom SMARTS features if requested
             if include_custom_smarts and self.custom_smarts:
@@ -201,7 +202,7 @@ class MoleculeFeaturizer:
                 edge['edges'] = torch.tensor([edges_array[0], edges_array[1]])
                 edge['distance_cutoff'] = distance_cutoff
 
-            self._cache[cache_key] = (node, edge)
+            self._cache[cache_key] = (node, edge, adj)
 
         return self._cache[cache_key]
 
@@ -255,7 +256,7 @@ class MoleculeFeaturizer:
         if not self.has_3d:
             return None
 
-        node, _ = self.get_graph()
+        node, _, _ = self.get_graph()
         return node.get('coords', None)
 
     def get_all_features(self, save_to: Optional[str] = None) -> Dict[str, Any]:
@@ -269,12 +270,12 @@ class MoleculeFeaturizer:
             Dictionary containing all features and metadata
         """
         features = self.get_feature()
-        node, edge = self.get_graph()
+        node, edge, adj = self.get_graph()
 
         all_features = {
             'descriptors': features['descriptor'],
             'fingerprints': {k: v for k, v in features.items() if k != 'descriptor'},
-            'graph': {'node': node, 'edge': edge},
+            'graph': {'node': node, 'edge': edge, 'adj': adj},
             'metadata': {
                 'input_smiles': self.input_smiles,
                 'num_atoms': self.num_atoms,

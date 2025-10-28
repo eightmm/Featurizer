@@ -641,7 +641,7 @@ class MoleculeFeaturizer:
 
         return adj + adj.transpose(0, 1)
 
-    def get_graph(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True) -> Tuple[Dict, Dict]:
+    def get_graph(self, mol_or_smiles: Union[str, Chem.Mol], add_hs: bool = True) -> Tuple[Dict, Dict, torch.Tensor]:
         """
         Create molecular graph with node and edge features from molecule.
 
@@ -650,9 +650,10 @@ class MoleculeFeaturizer:
             add_hs: Whether to add hydrogens
 
         Returns:
-            Tuple of (node, edge) dictionaries where:
+            Tuple of (node, edge, adj) where:
             - node: {'coords': coordinates, 'node_feats': node features}
             - edge: {'edges': [src, dst] indices, 'edge_feats': edge features}
+            - adj: adjacency matrix with bond features [num_atoms, num_atoms, num_bond_features]
         """
         mol = self._prepare_mol(mol_or_smiles, add_hs)
 
@@ -672,4 +673,4 @@ class MoleculeFeaturizer:
             'edge_feats': edge_features
         }
 
-        return node, edge
+        return node, edge, bond_features
