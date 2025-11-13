@@ -132,7 +132,7 @@ res_token = {
     'GLN': 5,  'GLU': 6,  'GLY': 7,  'HIS': 8,  'ILE': 9,
     'LEU': 10, 'LYS': 11, 'MET': 12, 'PHE': 13, 'PRO': 14,
     'SER': 15, 'THR': 16, 'TRP': 17, 'TYR': 18, 'VAL': 19,
-    'XXX': 20, 'METAL': 21,
+    'UNK': 20, 'METAL': 21,  # UNK: Unknown residue
 }
 
 # Element type mapping (for atom_element feature)
@@ -217,8 +217,8 @@ res_atm_token = {
     ('TYR', 'N'): 148, ('TYR', 'CA'): 149, ('TYR', 'C'): 150, ('TYR', 'O'): 151, ('TYR', 'CB'): 152, ('TYR', 'CG'): 153, ('TYR', 'CD1'): 154, ('TYR', 'CD2'): 155, ('TYR', 'CE1'): 156, ('TYR', 'CE2'): 157, ('TYR', 'CZ'): 158, ('TYR', 'OH'): 159,
     # VAL: N, CA, C, O, CB, CG1, CG2
     ('VAL', 'N'): 160, ('VAL', 'CA'): 161, ('VAL', 'C'): 162, ('VAL', 'O'): 163, ('VAL', 'CB'): 164, ('VAL', 'CG1'): 165, ('VAL', 'CG2'): 166,
-    # XXX: N, CA, C, O, CB, P, S, SE (unknown/non-standard amino acids)
-    ('XXX', 'N'): 167, ('XXX', 'CA'): 168, ('XXX', 'C'): 169, ('XXX', 'O'): 170, ('XXX', 'CB'): 171, ('XXX', 'P'): 172, ('XXX', 'S'): 173, ('XXX', 'SE'): 174,
+    # UNK: N, CA, C, O, CB (unknown residue, backbone + CB only)
+    ('UNK', 'N'): 167, ('UNK', 'CA'): 168, ('UNK', 'C'): 169, ('UNK', 'O'): 170, ('UNK', 'CB'): 171,
     # Metal ions (biologically important metals with distinct roles)
     ('METAL', 'CA'): 175,  # Calcium - signaling, structural
     ('METAL', 'MG'): 176,  # Magnesium - enzymatic cofactor, ATP binding

@@ -119,7 +119,7 @@ class ResidueFeaturizer:
                 continue
 
             # Convert residue name to integer token
-            res_type = AMINO_ACID_3_TO_INT.get(res_name, 20)  # 20 is XXX/unknown
+            res_type = AMINO_ACID_3_TO_INT.get(res_name, 20)  # 20 is UNK/unknown
 
             # Store data based on record type
             if record_type == 'ATOM':

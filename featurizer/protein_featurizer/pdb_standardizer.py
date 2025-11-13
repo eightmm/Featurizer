@@ -31,8 +31,7 @@ STANDARD_ATOMS = {
     'TRP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'NE1', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2'],
     'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
     'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2'],
-    'XXX': ['N', 'CA', 'C', 'O', 'CB', 'P', 'S', 'SE'],
-    'UNK': ['N', 'CA', 'C', 'O', 'CB']
+    'UNK': ['N', 'CA', 'C', 'O', 'CB']  # Unknown residue, backbone + CB only
 }
 
 # Nucleic acid residues to exclude
