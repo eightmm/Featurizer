@@ -21,12 +21,12 @@ suppl = Chem.SDMolSupplier('molecules.sdf')
 for mol in suppl:
     featurizer = MoleculeFeaturizer(mol)  # Initialize with molecule
     features = featurizer.get_feature()
-    node, edge = featurizer.get_graph()
+    node, edge, adj = featurizer.get_graph()
 
 # From SMILES
 featurizer = MoleculeFeaturizer("CC(=O)Oc1ccccc1C(=O)O")
 features = featurizer.get_feature()  # All descriptors and fingerprints
-node, edge = featurizer.get_graph()  # Graph representation
+node, edge, adj = featurizer.get_graph()  # Graph representation
 
 # With custom SMARTS patterns
 custom_patterns = {
@@ -35,7 +35,7 @@ custom_patterns = {
     'hydroxyl': '[OH]'
 }
 featurizer = MoleculeFeaturizer("c1ccncc1CCO", custom_smarts=custom_patterns)
-node, edge = featurizer.get_graph()
+node, edge, adj = featurizer.get_graph()
 # node['node_feats'] now has 122 + 3 dimensions (base features + custom patterns)
 
 # Without hydrogens
@@ -48,6 +48,9 @@ features = featurizer.get_feature()  # Features without H atoms
 from featurizer import ProteinFeaturizer
 
 featurizer = ProteinFeaturizer("protein.pdb")
+
+# Sequence extraction by chain
+sequences_by_chain = featurizer.get_sequence_by_chain()  # {'A': "ACDEF...", 'B': "GHIKL..."}
 
 # Atom-level features (node/edge format with SASA included)
 atom_node, atom_edge = featurizer.get_atom_features(distance_cutoff=4.0)
@@ -110,7 +113,7 @@ custom_patterns = {
 featurizer = MoleculeFeaturizer("c1ccncc1CCO", hydrogen=False, custom_smarts=custom_patterns)
 
 # Get graph with custom features automatically included
-node, edge = featurizer.get_graph()
+node, edge, adj = featurizer.get_graph()
 # node['node_feats'] is now 122 + n_patterns dimensions
 
 # If you need to check patterns separately
@@ -146,6 +149,26 @@ for pdb_file in glob.glob("pdbs/*.pdb"):
         print(f"✗ Failed {pdb_file}: {e}")
 ```
 
+### Protein Sequence Extraction
+```python
+from featurizer import ProteinFeaturizer
+
+featurizer = ProteinFeaturizer("protein.pdb")
+
+# Get sequences separated by chain
+sequences_by_chain = featurizer.get_sequence_by_chain()
+for chain_id, sequence in sequences_by_chain.items():
+    print(f"Chain {chain_id}: {sequence} (length: {len(sequence)})")
+
+# If you need the full sequence, concatenate:
+full_sequence = ''.join(sequences_by_chain.values())
+print(f"Full sequence: {full_sequence}")
+
+# Example output:
+# Chain A: ACDEFGHIKLMNPQRSTVWY (length: 20)
+# Chain B: GHIKLMNPQR (length: 10)
+```
+
 ### Contact Maps with Different Thresholds
 ```python
 from featurizer import ProteinFeaturizer
@@ -179,6 +202,17 @@ for smiles in smiles_list:
 descriptors = torch.stack(all_features)
 ```
 
+
+## 🧪 Examples
+
+Check out the [example/](example/) directory for:
+- **10gs_protein.pdb** and **10gs_ligand.sdf**: Example input files
+- **test_featurizer.py**: Comprehensive test script demonstrating all features
+
+```bash
+cd example
+python test_featurizer.py
+```
 
 ## 📖 Documentation
 

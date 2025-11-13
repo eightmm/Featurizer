@@ -534,3 +534,14 @@ class ProteinFeaturizer:
     # All features
     get_all_residue_features = get_all_features
     get_residue_level_all_features = get_all_features
+
+    # ============== SEQUENCE FEATURES ==============
+
+    def get_sequence_by_chain(self) -> Dict[str, str]:
+        """
+        Get amino acid sequences in one-letter code separated by chain.
+
+        Returns:
+            Dictionary mapping chain IDs to one-letter amino acid sequences
+        """
+        return self._featurizer.get_sequence_by_chain()

@@ -146,6 +146,30 @@ class ResidueFeaturizer:
         """
         return sorted(set(list([(chain, num, res) for chain, num, res, atom in self.protein_indices])))
 
+    def get_sequence_by_chain(self) -> Dict[str, str]:
+        """
+        Get amino acid sequences in one-letter code separated by chain.
+
+        Returns:
+            Dictionary mapping chain IDs to one-letter amino acid sequences
+        """
+        residues = self.get_residues()
+        sequences_by_chain = {}
+
+        # Reverse mapping from int to 3-letter code
+        int_to_3letter = {v: k for k, v in AMINO_ACID_3_TO_INT.items()}
+
+        for chain, res_num, res_type in residues:
+            if chain not in sequences_by_chain:
+                sequences_by_chain[chain] = []
+
+            three_letter = int_to_3letter.get(res_type, 'UNK')
+            one_letter = AMINO_ACID_3TO1.get(three_letter, 'X')
+            sequences_by_chain[chain].append(one_letter)
+
+        # Convert lists to strings
+        return {chain: ''.join(seq) for chain, seq in sequences_by_chain.items()}
+
     def get_residue_coordinates(self, residue_index: Tuple) -> pd.Series:
         """
         Get coordinates for a specific residue.
