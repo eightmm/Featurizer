@@ -78,8 +78,10 @@ standardize_pdb("messy.pdb", "clean.pdb")
 # Standardization automatically:
 # - Removes water molecules
 # - Removes DNA/RNA residues
+# - Converts modified amino acids (MSE→MET, SEP→SER, etc.)
+# - Normalizes protonation states (HID/HIE/HIP→HIS)
 # - Reorders atoms by standard definitions
-# - Renumbers residues sequentially
+# - Renumbers residues sequentially (insertion codes removed)
 # - Removes hydrogens (optional)
 ```
 
@@ -94,6 +96,7 @@ standardize_pdb("messy.pdb", "clean.pdb")
 - **Atom Features**: 175 token types with atomic SASA → [Details](docs/protein_atom_feature.md)
 - **Residue Features**: Geometry, SASA, contacts, secondary structure → [Details](docs/protein_residue_feature.md)
 - **Graph Representations**: Both atom and residue-level networks
+- **Standardization**: Handles 40+ modified amino acids and PTMs (MSE, SEP, TPO, PTR, HYP, etc.)
 
 ## 🔧 Advanced Examples
 

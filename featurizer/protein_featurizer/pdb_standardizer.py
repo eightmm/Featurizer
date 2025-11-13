@@ -93,6 +93,22 @@ RESIDUE_NAME_MAPPING = {
     # Tryptophan protonation states (heavy atoms identical)
     'TRP-': 'TRP', # deprotonated tryptophan
 
+    # Modified amino acids (commonly found in X-ray structures and PTMs)
+    'MSE': 'MET',  # Selenomethionine (Se replaces S, very common in X-ray crystallography)
+    'SEP': 'SER',  # Phosphoserine (post-translational modification)
+    'TPO': 'THR',  # Phosphothreonine (post-translational modification)
+    'PTR': 'TYR',  # Phosphotyrosine (post-translational modification)
+    'HYP': 'PRO',  # Hydroxyproline (common in collagen)
+    'MLY': 'LYS',  # N-dimethyllysine (post-translational modification)
+    'M3L': 'LYS',  # N-trimethyllysine (post-translational modification)
+    'ALY': 'LYS',  # N-acetyllysine (post-translational modification)
+    'CSO': 'CYS',  # S-hydroxycysteine (oxidized cysteine)
+    'CSS': 'CYS',  # S-mercaptocysteine (disulfide-bonded)
+    'CME': 'CYS',  # S-methylcysteine
+    'OCS': 'CYS',  # Cysteinesulfonic acid (oxidized)
+    'MEN': 'ASN',  # N-methylasparagine
+    'FME': 'MET',  # N-formylmethionine (translation initiation)
+
     # N-terminal and C-terminal variants
     'ACE': 'ACE',  # acetylated N-terminus (keep as is for HETATM)
     'NME': 'NME',  # N-methylated C-terminus (keep as is for HETATM)
