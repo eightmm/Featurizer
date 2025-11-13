@@ -77,12 +77,31 @@ class ProteinFeaturizer:
         )
 
         for idx, residue in enumerate(self.residues):
-            residue_coord = torch.as_tensor(
-                self._featurizer.get_residue_coordinates(residue).tolist()
-            )
+            residue_coord_series = self._featurizer.get_residue_coordinates(residue)
+
+            # For unknown residues (type 20), only use backbone + CB atoms
+            res_type = residue[2]
+            if res_type == 20:  # UNK residue
+                # Standard backbone atoms + CB
+                standard_unk_atoms = ['N', 'CA', 'C', 'O', 'CB']
+                filtered_coords = []
+                for atom_name in standard_unk_atoms:
+                    if atom_name in residue_coord_series.index:
+                        filtered_coords.append(residue_coord_series[atom_name])
+                    else:
+                        # Atom missing, use zero coordinates
+                        filtered_coords.append([0.0, 0.0, 0.0])
+                residue_coord = torch.as_tensor(filtered_coords)
+            else:
+                residue_coord = torch.as_tensor(residue_coord_series.tolist())
+
             self.coords[idx, :residue_coord.shape[0], :] = residue_coord
             # Sidechain centroid
-            self.coords[idx, -1, :] = residue_coord[4:, :].mean(0)
+            if residue_coord.shape[0] > 4:
+                self.coords[idx, -1, :] = residue_coord[4:, :].mean(0)
+            else:
+                # No sidechain atoms, use CA position as fallback
+                self.coords[idx, -1, :] = residue_coord[1, :] if residue_coord.shape[0] > 1 else torch.zeros(3)
 
         # Extract CA and SC coordinates
         self.coords_CA = self.coords[:, 1:2, :]
