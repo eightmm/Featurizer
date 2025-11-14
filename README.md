@@ -63,9 +63,17 @@ res_node, res_edge = featurizer.get_residue_features(distance_cutoff=8.0)
 ```python
 from featurizer import PDBStandardizer
 
-# Standardize PDB file (removes hydrogens by default)
-standardizer = PDBStandardizer()
+# Default: Convert PTMs to base amino acids (for ESM models, MD simulation)
+standardizer = PDBStandardizer()  # ptm_handling='base_aa' (default)
 standardizer.standardize("messy.pdb", "clean.pdb")
+
+# For protein-ligand modeling: Preserve PTM atoms
+standardizer = PDBStandardizer(ptm_handling='preserve')
+standardizer.standardize("protein.pdb", "protein_with_ptms.pdb")
+
+# Remove PTM residues entirely (standard AA only)
+standardizer = PDBStandardizer(ptm_handling='remove')
+standardizer.standardize("protein.pdb", "protein_standard_only.pdb")
 
 # Keep hydrogens
 standardizer = PDBStandardizer(remove_hydrogens=False)
@@ -73,12 +81,12 @@ standardizer.standardize("messy.pdb", "clean.pdb")
 
 # Or use convenience function
 from featurizer import standardize_pdb
-standardize_pdb("messy.pdb", "clean.pdb")
+standardize_pdb("messy.pdb", "clean.pdb", ptm_handling='base_aa')
 
 # Standardization automatically:
 # - Removes water molecules
 # - Removes DNA/RNA residues
-# - Converts modified amino acids (MSE→MET, SEP→SER, etc.)
+# - Handles PTMs based on ptm_handling mode (see below)
 # - Normalizes protonation states (HID/HIE/HIP→HIS)
 # - Reorders atoms by standard definitions
 # - Renumbers residues sequentially (insertion codes removed)
@@ -96,7 +104,9 @@ standardize_pdb("messy.pdb", "clean.pdb")
 - **Atom Features**: 175 token types with atomic SASA → [Details](docs/protein_atom_feature.md)
 - **Residue Features**: Geometry, SASA, contacts, secondary structure → [Details](docs/protein_residue_feature.md)
 - **Graph Representations**: Both atom and residue-level networks
-- **Standardization**: Handles 40+ modified amino acids and PTMs (MSE, SEP, TPO, PTR, HYP, etc.)
+- **Standardization**: Flexible PTM handling with 3 modes (base_aa, preserve, remove)
+  - Supports 15+ PTM types: phosphorylation (SEP, TPO, PTR), selenomethionine (MSE), methylation (MLY, M3L), acetylation (ALY), hydroxylation (HYP), and more
+  - Compatible with ESM models, protein-ligand modeling, and MD simulations
 
 ## 🔧 Advanced Examples
 
@@ -124,32 +134,62 @@ custom_feats = featurizer.get_custom_smarts_features()
 # Returns: {'features': tensor, 'names': [...], 'patterns': {...}}
 ```
 
-### PDB Standardization with Options
+### PTM (Post-Translational Modification) Handling
 ```python
 from featurizer import PDBStandardizer
 
-# Remove hydrogens (default)
-standardizer = PDBStandardizer(remove_hydrogens=True)
-standardizer.standardize("messy.pdb", "clean.pdb")
+# Mode 1: 'base_aa' - Convert PTMs to base amino acids (DEFAULT)
+# Use for: ESM models, AlphaFold, MD simulations with standard force fields
+standardizer = PDBStandardizer(ptm_handling='base_aa')
+standardizer.standardize("protein.pdb", "protein_esm.pdb")
+# SEP → SER (phosphate removed)
+# PTR → TYR (phosphate removed)
+# MSE → MET (selenium → sulfur)
+# MLY → LYS (methyl groups removed)
 
-# Keep hydrogens for analysis
-standardizer = PDBStandardizer(remove_hydrogens=False)
-standardizer.standardize("messy.pdb", "clean_with_H.pdb")
+# Mode 2: 'preserve' - Keep PTM atoms intact
+# Use for: Protein-ligand binding analysis, structural studies with PTMs
+standardizer = PDBStandardizer(ptm_handling='preserve')
+standardizer.standardize("protein.pdb", "protein_structure.pdb")
+# SEP stays as SEP with all phosphate atoms
+# PTR stays as PTR with all phosphate atoms
+# MSE stays as MSE with selenium atom
 
-# Batch processing multiple PDB files
+# Mode 3: 'remove' - Remove PTM residues entirely
+# Use for: Standard-AA-only analysis
+standardizer = PDBStandardizer(ptm_handling='remove')
+standardizer.standardize("protein.pdb", "protein_standard.pdb")
+# SEP residues removed
+# MSE residues removed
+# Only 20 standard amino acids remain
+
+# Supported PTMs (15+ types):
+# - Phosphorylation: SEP, TPO, PTR
+# - Selenomethionine: MSE
+# - Methylation/Acetylation: MLY, M3L, ALY
+# - Hydroxylation: HYP
+# - Cysteine modifications: CSO, CSS, CME, OCS
+# - Others: MEN, FME
+
+# Batch processing with different modes
 import glob
 import os
 
-standardizer = PDBStandardizer()
-os.makedirs("clean_pdbs", exist_ok=True)
+os.makedirs("esm_ready", exist_ok=True)
+os.makedirs("ligand_ready", exist_ok=True)
 
 for pdb_file in glob.glob("pdbs/*.pdb"):
-    output = pdb_file.replace("pdbs/", "clean_pdbs/")
-    try:
-        standardizer.standardize(pdb_file, output)
-        print(f"✓ Standardized: {pdb_file}")
-    except Exception as e:
-        print(f"✗ Failed {pdb_file}: {e}")
+    basename = os.path.basename(pdb_file)
+
+    # For ESM: base_aa mode
+    esm_standardizer = PDBStandardizer(ptm_handling='base_aa')
+    esm_standardizer.standardize(pdb_file, f"esm_ready/{basename}")
+
+    # For protein-ligand: preserve mode
+    pl_standardizer = PDBStandardizer(ptm_handling='preserve')
+    pl_standardizer.standardize(pdb_file, f"ligand_ready/{basename}")
+
+    print(f"✓ Processed: {pdb_file}")
 ```
 
 ### Protein Sequence Extraction
@@ -211,10 +251,12 @@ descriptors = torch.stack(all_features)
 Check out the [example/](example/) directory for:
 - **10gs_protein.pdb** and **10gs_ligand.sdf**: Example input files
 - **test_featurizer.py**: Comprehensive test script demonstrating all features
+- **test_ptm_handling.py**: PTM handling modes test suite
 
 ```bash
 cd example
-python test_featurizer.py
+python test_featurizer.py       # Test all featurizer functions
+python test_ptm_handling.py     # Test PTM handling modes (base_aa, preserve, remove)
 ```
 
 ## 📖 Documentation

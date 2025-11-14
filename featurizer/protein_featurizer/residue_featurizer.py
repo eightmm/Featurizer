@@ -121,6 +121,11 @@ class ResidueFeaturizer:
             # Convert residue name to integer token
             res_type = AMINO_ACID_3_TO_INT.get(res_name, 20)  # 20 is UNK/unknown
 
+            # For unknown residues (PTMs), only keep backbone + CB atoms
+            if res_type == 20:  # UNK
+                if atom_type not in ['N', 'CA', 'C', 'O', 'CB']:
+                    continue
+
             # Store data based on record type
             if record_type == 'ATOM':
                 protein_index.append((chain_id, res_num, res_type, atom_type))

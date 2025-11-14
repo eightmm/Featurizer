@@ -1,136 +1,117 @@
 # Featurizer Examples
 
-This directory contains example files and scripts for testing the Featurizer package.
+This directory contains example files and usage demonstrations for the Featurizer package.
 
 ## Files
 
 - **10gs_protein.pdb**: Example protein structure (Glutathione S-transferase, 416 residues, 2 chains)
 - **10gs_ligand.sdf**: Example small molecule ligand
-- **test_featurizer.py**: Comprehensive test script demonstrating all features
+- **usage_example.ipynb**: Interactive Jupyter notebook demonstrating the API
 
-## Running the Tests
+## Quick Start
+
+### Interactive Tutorial (Recommended)
+
+Open the Jupyter notebook for a complete, interactive tutorial:
 
 ```bash
-# Make sure you're in the example directory
 cd example
-
-# Run the comprehensive test
-python test_featurizer.py
+jupyter notebook usage_example.ipynb
 ```
 
-## What the Test Covers
+The notebook demonstrates:
+1. **PDB Standardization** - Clean and standardize protein structures with PTM handling
+2. **Protein Featurization** - Extract atom-level and residue-level features
+3. **Molecule Featurization** - Extract features from small molecules (ligands)
+4. **Working with Features** - Access and use the extracted PyTorch tensors
 
-### Protein Featurizer Tests
+### Python Script Usage
 
-1. **Sequence Extraction** - Extract amino acid sequences by chain
-2. **Residue-Level Features** - Node and edge features at residue level
-3. **Atom-Level Features** - Node and edge features at atom level
-4. **SASA Features** - Solvent accessible surface area calculations
-5. **Contact Maps** - Residue-residue interaction networks
-6. **Geometric Features** - Dihedrals, curvature, torsion angles
+```python
+from featurizer import PDBStandardizer, ProteinFeaturizer, MoleculeFeaturizer
 
-### Molecule Featurizer Tests
+# 1. Standardize PDB file
+standardizer = PDBStandardizer(
+    remove_hydrogens=True,
+    ptm_handling='base_aa'  # 'base_aa', 'preserve', or 'remove'
+)
+standardizer.standardize('10gs_protein.pdb', '10gs_standardized.pdb')
 
-1. **Basic Properties** - SMILES, formula, atom/bond counts
-2. **Descriptors** - 40 normalized molecular descriptors
-3. **Fingerprints** - 7 types (Morgan, MACCS, RDKit, etc.)
-4. **Graph Representation** - Node/edge features with adjacency matrix
-5. **Hydrogen Handling** - Comparison with/without hydrogens
-6. **Custom SMARTS** - User-defined structural pattern matching
+# 2. Extract protein features
+# Residue-level
+residue_featurizer = ProteinFeaturizer.ResidueFeaturizer('10gs_standardized.pdb')
+sequences = residue_featurizer.get_sequence_by_chain()
+res_features = residue_featurizer.get_features()
 
-## Expected Output
+# Atom-level
+atom_featurizer = ProteinFeaturizer.AtomFeaturizer('10gs_standardized.pdb')
+atom_features = atom_featurizer.get_features()
 
-When you run the test script, you should see output like:
-
+# 3. Extract ligand features
+mol_featurizer = MoleculeFeaturizer('10gs_ligand.sdf')
+mol_features = mol_featurizer.get_features()
 ```
-======================================================================
-  FEATURIZER PACKAGE - COMPREHENSIVE TESTING
-======================================================================
 
-📂 Working directory: /path/to/example
+## Feature Details
 
-======================================================================
-  PROTEIN FEATURIZER TESTS
-======================================================================
+### Residue-Level Features
 
-✓ Protein loaded successfully
+**Scalar Features:**
+- One-hot encoded amino acid types (21 classes: 20 standard + UNK)
+- N/C-terminal flags
+- Intra-residue distances
+- Dihedral angles (φ, ψ, ω, χ1-5)
+- SASA (Solvent Accessible Surface Area)
+- Forward/reverse connection distances
 
-  Chain A: 208 residues
-  Chain B: 208 residues
-  Total residues: 416
+**Vector Features:**
+- Intra-residue vectors
+- Forward/reverse connection vectors
+- Local coordinate frames
 
-... [detailed feature information] ...
+**Edge Features:**
+- Inter-residue distances (CA-CA, SC-SC, CA-SC, SC-CA)
+- Relative position encoding
+- Interaction vectors
 
-✓ All protein tests completed successfully!
+### PTM Handling
 
-======================================================================
-  MOLECULE FEATURIZER TESTS
-======================================================================
+Post-translational modifications (PTMs) are handled during featurization:
+- PTM residues are encoded as **UNK (unknown, index 20)**
+- Only **backbone atoms (N, CA, C, O) + CB** are kept
+- PTMs appear as **'X'** in sequence strings
 
-✓ Molecule loaded successfully
-
-... [detailed feature information] ...
-
-✓ All molecule tests completed successfully!
-
-======================================================================
-  ✓ ALL TESTS COMPLETED SUCCESSFULLY!
-======================================================================
-```
+The standardizer offers three PTM handling modes:
+- `'base_aa'`: Convert to base amino acids (e.g., SEP → SER)
+- `'preserve'`: Keep all PTM atoms intact
+- `'remove'`: Remove PTM residues entirely
 
 ## Using Your Own Files
 
-You can modify the test script to use your own PDB and SDF files:
+Replace the example files with your own:
 
 ```python
-# In test_featurizer.py, change the file paths:
-pdb_file = "your_protein.pdb"
-sdf_file = "your_ligand.sdf"
-```
+# Your protein structure
+standardizer.standardize('your_protein.pdb', 'standardized.pdb')
+featurizer = ProteinFeaturizer.ResidueFeaturizer('standardized.pdb')
 
-Or create a new script based on the examples:
-
-```python
-from featurizer import ProteinFeaturizer, MoleculeFeaturizer
-
-# For proteins
-protein = ProteinFeaturizer("your_protein.pdb")
-sequences = protein.get_sequence_by_chain()
-res_node, res_edge = protein.get_residue_features()
-
-# For molecules
-from rdkit import Chem
-mol = Chem.SDMolSupplier("your_ligand.sdf")[0]
-molecule = MoleculeFeaturizer(mol)
-features = molecule.get_feature()
-node, edge, adj = molecule.get_graph()
+# Your ligand
+mol_featurizer = MoleculeFeaturizer('your_ligand.sdf')
 ```
 
 ## Troubleshooting
 
 ### Missing Dependencies
 
-If you get import errors, make sure all dependencies are installed:
-
 ```bash
 pip install rdkit-pypi torch numpy pandas freesasa
 ```
 
-### File Not Found
-
-Make sure you're running the script from the `example` directory:
-
-```bash
-cd /path/to/Featurizer/example
-python test_featurizer.py
-```
-
 ### FreeSASA Warnings
 
-You may see warnings about unknown atoms from FreeSASA. These are normal and can be ignored - the package handles them internally.
+Warnings about unknown atoms from FreeSASA are normal and handled internally.
 
 ## More Information
 
-- See the main [README.md](../README.md) for API documentation
-- See [docs/](../docs/) for detailed feature descriptions
-- See [claudedocs/](../claudedocs/) for additional examples
+- Main [README.md](../README.md) for installation and API overview
+- [usage_example.ipynb](usage_example.ipynb) for interactive tutorial

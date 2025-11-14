@@ -31,7 +31,24 @@ STANDARD_ATOMS = {
     'TRP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'NE1', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2'],
     'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH'],
     'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2'],
-    'UNK': ['N', 'CA', 'C', 'O', 'CB']  # Unknown residue, backbone + CB only
+    'UNK': ['N', 'CA', 'C', 'O', 'CB'],  # Unknown residue, backbone + CB only
+
+    # Post-Translational Modifications (PTMs)
+    # For ptm_handling='preserve' mode
+    'SEP': ['N', 'CA', 'C', 'O', 'CB', 'OG', 'P', 'O1P', 'O2P', 'O3P'],  # Phosphoserine
+    'TPO': ['N', 'CA', 'C', 'O', 'CB', 'OG1', 'CG2', 'P', 'O1P', 'O2P', 'O3P'],  # Phosphothreonine
+    'PTR': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'OH', 'P', 'O1P', 'O2P', 'O3P'],  # Phosphotyrosine
+    'MSE': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'SE', 'CE'],  # Selenomethionine
+    'HYP': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'OD1'],  # Hydroxyproline
+    'MLY': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'CE', 'NZ', 'CM1', 'CM2'],  # Dimethyllysine
+    'M3L': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'CE', 'NZ', 'CM1', 'CM2', 'CM3'],  # Trimethyllysine
+    'ALY': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'CD', 'CE', 'NZ', 'C1', 'O1', 'C2'],  # Acetyllysine
+    'CSO': ['N', 'CA', 'C', 'O', 'CB', 'SG', 'OD1'],  # Cysteine sulfenic acid
+    'CSS': ['N', 'CA', 'C', 'O', 'CB', 'SG'],  # S-mercaptocysteine
+    'CME': ['N', 'CA', 'C', 'O', 'CB', 'SG', 'CE'],  # S-methylcysteine
+    'OCS': ['N', 'CA', 'C', 'O', 'CB', 'SG', 'O1', 'O2'],  # Cysteinesulfonic acid
+    'MEN': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'OD1', 'ND2', 'CN'],  # N-methylasparagine
+    'FME': ['N', 'CA', 'C', 'O', 'CB', 'CG', 'SD', 'CE', 'CN', 'O1'],  # N-formylmethionine
 }
 
 # Nucleic acid residues to exclude
@@ -125,31 +142,72 @@ class PDBStandardizer:
     - Removing DNA/RNA residues
     - Reordering atoms according to standard definitions
     - Renumbering residues sequentially
+    - Handling post-translational modifications (PTMs) based on use case
     """
 
-    def __init__(self, remove_hydrogens: bool = True):
+    def __init__(self, remove_hydrogens: bool = True, ptm_handling: str = 'base_aa'):
         """
         Initialize the PDB standardizer.
 
         Args:
             remove_hydrogens: Whether to remove hydrogen atoms from the PDB
+            ptm_handling: How to handle post-translational modifications (PTMs)
+                - 'base_aa': Convert PTMs to their base amino acids (default)
+                             SEP→SER, PTR→TYR, MSE→MET, etc.
+                             Use for: ESM models, MD simulations with standard force fields
+                - 'preserve': Keep PTM residues and all their atoms intact
+                              SEP stays as SEP with phosphate groups
+                              Use for: Protein-ligand modeling, structural analysis
+                - 'remove': Remove all PTM residues from the structure
+                            Use for: Cleaning structures for standard-AA-only analysis
         """
         self.remove_hydrogens = remove_hydrogens
+        self.ptm_handling = ptm_handling
+
+        # Validate ptm_handling parameter
+        valid_modes = ['base_aa', 'preserve', 'remove']
+        if ptm_handling not in valid_modes:
+            raise ValueError(
+                f"Invalid ptm_handling mode: '{ptm_handling}'. "
+                f"Must be one of: {', '.join(valid_modes)}"
+            )
+
         self.standard_atoms = STANDARD_ATOMS
         self.nucleic_acid_residues = NUCLEIC_ACID_RESIDUES
         self.residue_name_mapping = RESIDUE_NAME_MAPPING
 
     def _normalize_residue_name(self, res_name: str) -> str:
         """
-        Normalize residue name to standard amino acid name.
+        Normalize residue name based on ptm_handling mode.
 
         Args:
-            res_name: Original residue name (e.g., 'HID', 'HIE', 'MSE')
+            res_name: Original residue name (e.g., 'HID', 'HIE', 'MSE', 'SEP')
 
         Returns:
-            Standardized residue name (e.g., 'HIS', 'HIS', 'MET')
+            Normalized residue name based on ptm_handling mode:
+            - 'base_aa': Maps to standard amino acid (e.g., 'HIS', 'MET', 'SER')
+            - 'preserve': Returns original name for PTMs (e.g., 'SEP', 'MSE')
+            - 'remove': Returns original name (removal handled in _process_atom_line)
         """
-        return self.residue_name_mapping.get(res_name, res_name)
+        if self.ptm_handling == 'preserve':
+            # Don't map PTM residues, keep original names
+            # Still map protonation states to standard names (HID→HIS, CYX→CYS)
+            # PTMs are those that would map but have different chemical structure
+            ptm_residues = {
+                'SEP', 'TPO', 'PTR',  # Phosphorylation
+                'MSE',  # Selenomethionine
+                'HYP',  # Hydroxyproline
+                'MLY', 'M3L', 'ALY',  # Methylation/Acetylation
+                'CSO', 'CSS', 'CME', 'OCS',  # Cysteine modifications
+                'MEN', 'FME'  # Other modifications
+            }
+            if res_name in ptm_residues:
+                return res_name  # Keep PTM name
+            else:
+                return self.residue_name_mapping.get(res_name, res_name)
+        else:
+            # 'base_aa' or 'remove' mode: use normal mapping
+            return self.residue_name_mapping.get(res_name, res_name)
 
     def standardize(self, input_pdb_path: str, output_pdb_path: str) -> str:
         """
@@ -225,6 +283,19 @@ class PDBStandardizer:
         # Skip nucleic acid residues
         if res_name in self.nucleic_acid_residues:
             return
+
+        # Handle PTM removal if requested
+        if self.ptm_handling == 'remove':
+            ptm_residues = {
+                'SEP', 'TPO', 'PTR',  # Phosphorylation
+                'MSE',  # Selenomethionine
+                'HYP',  # Hydroxyproline
+                'MLY', 'M3L', 'ALY',  # Methylation/Acetylation
+                'CSO', 'CSS', 'CME', 'OCS',  # Cysteine modifications
+                'MEN', 'FME'  # Other modifications
+            }
+            if res_name in ptm_residues:
+                return
 
         # Normalize residue name to standard amino acid
         normalized_res_name = self._normalize_residue_name(res_name)
@@ -389,7 +460,8 @@ class PDBStandardizer:
                f"{x:8.3f}{y:8.3f}{z:8.3f}{occupancy:>6s}{temp_factor:>6s}          {element:>2s}\n"
 
 
-def standardize_pdb(input_pdb_path: str, output_pdb_path: str, remove_hydrogens: bool = True) -> str:
+def standardize_pdb(input_pdb_path: str, output_pdb_path: str,
+                     remove_hydrogens: bool = True, ptm_handling: str = 'base_aa') -> str:
     """
     Convenience function to standardize a PDB file.
 
@@ -397,11 +469,12 @@ def standardize_pdb(input_pdb_path: str, output_pdb_path: str, remove_hydrogens:
         input_pdb_path: Path to input PDB file
         output_pdb_path: Path for output standardized PDB
         remove_hydrogens: Whether to remove hydrogen atoms
+        ptm_handling: How to handle PTMs ('base_aa', 'preserve', or 'remove')
 
     Returns:
         Path to the standardized PDB file
     """
-    standardizer = PDBStandardizer(remove_hydrogens=remove_hydrogens)
+    standardizer = PDBStandardizer(remove_hydrogens=remove_hydrogens, ptm_handling=ptm_handling)
     return standardizer.standardize(input_pdb_path, output_pdb_path)
 
 
